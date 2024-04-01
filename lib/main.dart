@@ -67,7 +67,7 @@ class StartScreen extends StatelessWidget {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(50),
-                  primary: Colors.purple.shade300,
+                  primary: Color(0xAA615793),
                   onPrimary: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -76,8 +76,7 @@ class StartScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (context) => const SignInScreen()),
+                    MaterialPageRoute(builder: (context) => SignInScreen()),
                   );
                 },
                 child: const Text('Get Started'),
