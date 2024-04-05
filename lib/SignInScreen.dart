@@ -114,8 +114,8 @@ class _SignInScreenState extends State<SignInScreen> {
                 Spacer(),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    primary: Color(0xFF615793),
-                    onPrimary: Colors.white,
+                    backgroundColor: Color(0xFF615793),
+                    foregroundColor: Colors.white,
                   ),
                   onPressed: _attemptSignIn,
                   child: const Text('Sign In'),
@@ -125,8 +125,8 @@ class _SignInScreenState extends State<SignInScreen> {
                 Spacer(),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    primary: Color(0xFF615793),
-                    onPrimary: Colors.white,
+                    backgroundColor: Color(0xFF615793),
+                    foregroundColor: Colors.white,
                   ),
                   onPressed: _signInWithBarcode,
                   child: const Text('Sign In with Barcode'),

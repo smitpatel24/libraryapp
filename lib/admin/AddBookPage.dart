@@ -72,7 +72,7 @@ class _AddBookPageState extends State<AddBookPage> {
             SizedBox(height: 30),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                primary: Color(0xFF615793),
+                backgroundColor: Color(0xFF615793),
                 padding: EdgeInsets.symmetric(vertical: 16.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),

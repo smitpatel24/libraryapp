@@ -38,7 +38,7 @@ class StartScreen extends StatelessWidget {
               backgroundColor: Colors.yellow,
               child: CircleAvatar(
                 radius: 55,
-                backgroundImage: AssetImage('lib/images/logo_favl.jpg'),
+                backgroundImage: AssetImage('assets/images/logo_favl.jpg'),
               ),
             ),
             const SizedBox(height: 24),
@@ -67,8 +67,8 @@ class StartScreen extends StatelessWidget {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(50),
-                  primary: Color(0xAA615793),
-                  onPrimary: Colors.white,
+                  backgroundColor: Color(0xAA615793),
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),

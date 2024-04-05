@@ -132,7 +132,7 @@ class _EditReaderPageState extends State<EditReaderPage> {
       [Color? color]) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        primary: color ?? Color(0xFF615793),
+        backgroundColor: color ?? Color(0xFF615793),
         padding: EdgeInsets.symmetric(vertical: 16.0),
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
