@@ -138,7 +138,7 @@ class _EditReaderPageState extends State<EditReaderPage> {
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
       ),
       onPressed: onPressed,
-      child: Text(text, style: TextStyle(fontSize: 18)),
+      child: Text(text, style: TextStyle(fontSize: 18, color: Colors.white)),
     );
   }
 

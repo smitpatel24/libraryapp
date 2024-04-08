@@ -15,6 +15,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
+        fontFamily: 'Mulish', // Ensure this font is in your pubspec.yaml
       ),
       home: const StartScreen(),
     );
@@ -29,62 +30,118 @@ class StartScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Color(0xFF32324D),
       body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: <Widget>[
-            const Spacer(),
-            CircleAvatar(
-              radius: 60,
-              backgroundColor: Colors.yellow,
-              child: CircleAvatar(
-                radius: 55,
-                backgroundImage: AssetImage('assets/images/logo_favl.jpg'),
+            Positioned.fill(
+              child: CustomPaint(
+                painter: BackgroundPainter(),
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Sankofa',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                'Transform literacy in Burkina Faso with efficient library management app.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
-                ),
-              ),
-            ),
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(50),
-                  backgroundColor: Color(0xAA615793),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Spacer(flex: 2),
+                // Adjust logo size as necessary
+                Image.asset('assets/images/logo_favl.jpg',
+                    width: 163, height: 217),
+                SizedBox(height: 24),
+                Spacer(flex: 2),
+                Text(
+                  'Sankofa',
+                  style: TextStyle(
+                    fontFamily:
+                        'DM Sans', // Ensure this font is in your pubspec.yaml
+                    fontSize: 26,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
                   ),
                 ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SignInScreen()),
-                  );
-                },
-                child: const Text('Get Started'),
-              ),
+                Spacer(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 48.0),
+                  child: Text(
+                    'Transform literacy in Burkina Faso with efficient library management app.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFFEAEAEF),
+                    ),
+                  ),
+                ),
+                Spacer(),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size.fromHeight(50),
+                      backgroundColor: Color(0xFF615793),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SignInScreen()),
+                      );
+                    },
+                    child: const Text(
+                      'Get Started',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                Spacer(flex: 2),
+              ],
             ),
           ],
         ),
       ),
     );
   }
+}
+
+class BackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint();
+
+    // Set up paint for the larger ellipses
+    paint.color = Color(0xFFD6A642).withOpacity(0.5);
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 2;
+
+    // Larger ellipse in the center
+    canvas.drawCircle(
+        Offset(size.width / 2, size.height * 0.25), size.width * 0.3, paint);
+
+    // Larger ellipse in the center
+    canvas.drawCircle(
+        Offset(size.width / 2, size.height * 0.25), size.width * 0.35, paint);
+
+    // Small filled ellipse in the center
+    paint.color = Color(0xFFD6A642);
+    paint.style = PaintingStyle.fill;
+    canvas.drawCircle(
+        Offset(size.width / 2, size.height * 0.25), size.width * 0.25, paint);
+
+    // Dots
+    paint.color = Color(0xFFD6A642);
+    canvas.drawCircle(Offset(size.width * 0.255, size.height * 0.1), 4, paint);
+    canvas.drawCircle(Offset(size.width * 0.255, size.height * 0.4), 6, paint);
+
+    paint.color = Color(0xFFFFC861);
+    canvas.drawCircle(Offset(size.width * 0.745, size.height * 0.1), 5, paint);
+
+    paint.color = Color(0xFFFFE7BB);
+    canvas.drawCircle(Offset(size.width * 0.745, size.height * 0.4), 3, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

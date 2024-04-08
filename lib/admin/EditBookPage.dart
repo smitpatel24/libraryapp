@@ -17,11 +17,10 @@ class _EditBookPageState extends State<EditBookPage> {
   @override
   void initState() {
     super.initState();
-    // Assuming bookDetails contains 'bookName', 'authorName', and 'bookId'
     _bookNameController =
-        TextEditingController(text: widget.bookDetails['bookName']);
+        TextEditingController(text: widget.bookDetails['title']);
     _authorNameController =
-        TextEditingController(text: widget.bookDetails['authorName']);
+        TextEditingController(text: widget.bookDetails['author']);
     _bookIdController =
         TextEditingController(text: widget.bookDetails['bookId']);
   }
@@ -54,12 +53,22 @@ class _EditBookPageState extends State<EditBookPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             _buildTextField(
-                label: 'Book Name', controller: _bookNameController),
+              label: 'Book Name',
+              controller: _bookNameController,
+              isPassword: false, // Adjust based on your field
+            ),
             SizedBox(height: 20),
             _buildTextField(
-                label: 'Author Name', controller: _authorNameController),
+              label: 'Author Name',
+              controller: _authorNameController,
+              isPassword: false, // Adjust based on your field
+            ),
             SizedBox(height: 20),
-            _buildTextField(label: 'Book ID', controller: _bookIdController),
+            _buildTextField(
+              label: 'Book ID',
+              controller: _bookIdController,
+              isPassword: false, // Adjust based on your field
+            ),
             SizedBox(height: 30),
             InkWell(
               onTap: _updateBarcode,
@@ -89,6 +98,7 @@ class _EditBookPageState extends State<EditBookPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),
                 ),
+                foregroundColor: Colors.white, // Text color
               ),
               onPressed: _updateBookDetails,
               child: Text('Update Book', style: TextStyle(fontSize: 18)),
@@ -101,6 +111,7 @@ class _EditBookPageState extends State<EditBookPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),
                 ),
+                foregroundColor: Colors.white, // Text color
               ),
               onPressed: _deleteBook,
               child: Text('Delete Book', style: TextStyle(fontSize: 18)),
@@ -114,22 +125,26 @@ class _EditBookPageState extends State<EditBookPage> {
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
+    bool isPassword = false,
   }) {
     return TextField(
       controller: controller,
+      obscureText: isPassword,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Colors.white70),
         filled: true,
         fillColor: Colors.white24,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide: BorderSide.none,
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.orange, width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide: BorderSide(color: Colors.orange, width: 1.5),
+          borderSide: BorderSide(color: Colors.orange, width: 2.0),
         ),
+        // Conditionally show the icon if it's a password field
+        suffixIcon: isPassword
+            ? Icon(Icons.visibility_off, color: Colors.white70)
+            : null,
       ),
       style: TextStyle(color: Colors.white70),
     );
@@ -145,8 +160,9 @@ class _EditBookPageState extends State<EditBookPage> {
 }
 
 void main() => runApp(MaterialApp(
-        home: EditBookPage(bookDetails: {
-      'bookName': 'Sample Book',
-      'authorName': 'Author Name',
-      'bookId': '123456',
-    })));
+      home: EditBookPage(bookDetails: {
+        'title': 'Sample Book',
+        'author': 'Author Name',
+        'bookId': '123456',
+      }),
+    ));

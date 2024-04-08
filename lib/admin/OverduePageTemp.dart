@@ -22,17 +22,20 @@ class OverduePage extends StatelessWidget {
       'author': 'By Luna Evergreen',
       'libraryId': 'LB7834',
       'bookId': 'PR8923W6'
-    },{
+    },
+    {
       'title': "Aurora's Awakening",
       'author': 'By Luna Evergreen',
       'libraryId': 'LB7834',
       'bookId': 'PR8923W6'
-    },{
+    },
+    {
       'title': "Aurora's Awakening",
       'author': 'By Luna Evergreen',
       'libraryId': 'LB7834',
       'bookId': 'PR8923W6'
-    },{
+    },
+    {
       'title': "Aurora's Awakening",
       'author': 'By Luna Evergreen',
       'libraryId': 'LB7834',
@@ -182,7 +185,8 @@ class OverduePage extends StatelessWidget {
               Text('...', style: TextStyle(color: Colors.white54)),
               PaginationButton(text: '9', isSelected: false),
               PaginationButton(text: '10', isSelected: false),
-              PaginationButton(iconData: Icons.chevron_right, isSelected: false),
+              PaginationButton(
+                  iconData: Icons.chevron_right, isSelected: false),
             ],
           ),
         ),
@@ -201,7 +205,8 @@ class PaginationButton extends StatelessWidget {
     this.text,
     this.iconData,
     this.isSelected = false,
-  })  : assert(text != null || iconData != null, 'Either text or iconData must be provided'),
+  })  : assert(text != null || iconData != null,
+            'Either text or iconData must be provided'),
         super(key: key);
 
   @override
@@ -220,12 +225,12 @@ class PaginationButton extends StatelessWidget {
       child: Center(
         child: text != null
             ? Text(
-          text!,
-          style: TextStyle(
-            color: isSelected ? Colors.blue : Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        )
+                text!,
+                style: TextStyle(
+                  color: isSelected ? Colors.blue : Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
             : Icon(iconData, color: Colors.black),
       ),
     );

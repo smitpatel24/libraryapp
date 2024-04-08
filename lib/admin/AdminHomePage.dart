@@ -1,11 +1,13 @@
 import 'dart:ffi';
 
 import 'package:flutter/material.dart';
+//import 'package:libraryapp/admin/BookDetailsPage.dart';
 import 'AddUserPage.dart';
 import 'UserDetailsPage.dart';
 import 'AddBookPage.dart';
-import 'InventoryPage.dart';
-import 'OverduePage.dart';
+import 'package:libraryapp/InventoryPage.dart';
+import 'package:libraryapp/OverduePage.dart';
+import 'BookDetailsPage.dart';
 
 class AdminHomePage extends StatelessWidget {
   @override
@@ -90,7 +92,10 @@ class AdminHomePage extends StatelessWidget {
             icon: Icons.book,
             label: 'Book Details',
             onTap: () {
-              // Navigate to Book Details screen or handle the button tap
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => BookDetailsPage()),
+              );
             },
           ),
         ],

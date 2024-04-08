@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:libraryapp/user/ReaderDetailsPage.dart';
 import 'AddReaderPage.dart';
 import 'ReaderDetailsPage.dart';
-import 'InventoryPage.dart';
-import 'OverduePage.dart';
+import '../InventoryPage.dart';
+import '../OverduePage.dart';
 
 class UserHomePage extends StatelessWidget {
   @override
@@ -56,9 +56,9 @@ class UserHomePage extends StatelessWidget {
             label: 'Overdue',
             onTap: () {
               Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => OverduePage()),
-                );
+                context,
+                MaterialPageRoute(builder: (context) => OverduePage()),
+              );
             },
           ),
           _buildGridButton(
@@ -67,9 +67,9 @@ class UserHomePage extends StatelessWidget {
             label: 'Inventory',
             onTap: () {
               Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => InventoryPage()),
-                );
+                context,
+                MaterialPageRoute(builder: (context) => InventoryPage()),
+              );
             },
           ),
           _buildGridButton(

@@ -64,12 +64,20 @@ class _EditUserPageState extends State<EditUserPage> {
             ),
             SizedBox(height: 24),
             _buildTextField(
-                label: 'First Name', controller: _firstNameController),
+              label: 'First Name',
+              controller: _firstNameController,
+            ),
             SizedBox(height: 16),
             _buildTextField(
-                label: 'Last Name', controller: _lastNameController),
+              label: 'Last Name',
+              controller: _lastNameController,
+            ),
             SizedBox(height: 16),
-            _buildTextField(label: 'User ID', controller: _detailsController),
+            _buildTextField(
+              label: 'User ID',
+              controller: _detailsController,
+              isPassword: false, // Adjust based on your needs
+            ),
             SizedBox(height: 24),
             GestureDetector(
               onTap: _updateBarcode,
@@ -83,8 +91,10 @@ class _EditUserPageState extends State<EditUserPage> {
                   children: [
                     Icon(Icons.camera_alt, color: Colors.white54),
                     SizedBox(height: 10),
-                    Text('Update barcode',
-                        style: TextStyle(color: Colors.white70)),
+                    Text(
+                      'Update barcode',
+                      style: TextStyle(color: Colors.white70),
+                    ),
                   ],
                 ),
               ),
@@ -93,25 +103,28 @@ class _EditUserPageState extends State<EditUserPage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF615793),
+                foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 16.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),
                 ),
               ),
               onPressed: _updateDetails,
-              child: Text('Update Details', style: TextStyle(fontSize: 18)),
+              child: Text('Update Details'),
             ),
             SizedBox(height: 16),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xAA935757),
+                backgroundColor:
+                    Color(0xFF935757), // Modify for a different color
+                foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 16.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),
                 ),
               ),
               onPressed: _deleteUser,
-              child: Text('Delete User', style: TextStyle(fontSize: 18)),
+              child: Text('Delete User'),
             ),
             SizedBox(height: 80),
           ],
@@ -120,23 +133,28 @@ class _EditUserPageState extends State<EditUserPage> {
     );
   }
 
-  Widget _buildTextField(
-      {required String label, required TextEditingController controller}) {
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    bool isPassword = false,
+  }) {
     return TextField(
       controller: controller,
+      obscureText: isPassword,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Colors.white70),
         filled: true,
         fillColor: Colors.white24,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide: BorderSide.none,
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.orange, width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide: BorderSide(color: Colors.orange, width: 1.5),
+          borderSide: BorderSide(color: Colors.orange, width: 2.0),
         ),
+        suffixIcon: isPassword
+            ? const Icon(Icons.visibility_off, color: Colors.white70)
+            : null,
       ),
       style: TextStyle(color: Colors.white70),
     );

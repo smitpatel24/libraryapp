@@ -119,7 +119,8 @@ class _AddUserPageState extends State<AddUserPage> {
                 ),
               ),
               onPressed: _createAccount,
-              child: Text('Create Account', style: TextStyle(fontSize: 18)),
+              child: Text('Create Account',
+                  style: TextStyle(fontSize: 18, color: Colors.white)),
             ),
             SizedBox(height: 80), // Adjust spacing as needed
           ],

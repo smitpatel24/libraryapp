@@ -43,6 +43,11 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       appBar: AppBar(
         backgroundColor: Color(0xFF32324D),
         elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.add, color: Colors.white),
