@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'AddUserPage.dart';
 import 'UserDetailsPage.dart';
 import 'AddBookPage.dart';
+import 'InventoryPage.dart';
+import 'OverduePage.dart';
 
 class AdminHomePage extends StatelessWidget {
   @override
@@ -55,7 +57,10 @@ class AdminHomePage extends StatelessWidget {
             icon: Icons.access_time,
             label: 'Overdue',
             onTap: () {
-              // Navigate to Overdue screen or handle the button tap
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => OverduePage()),
+              );
             },
           ),
           _buildGridButton(
@@ -63,7 +68,10 @@ class AdminHomePage extends StatelessWidget {
             icon: Icons.inventory,
             label: 'Inventory',
             onTap: () {
-              // Navigate to Inventory screen or handle the button tap
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => InventoryPage()),
+              );
             },
           ),
           _buildGridButton(
