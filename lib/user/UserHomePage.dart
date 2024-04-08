@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:libraryapp/user/ReaderDetailsPage.dart';
+import 'package:libraryapp/user/screens/checkout_screen.dart';
 import 'AddReaderPage.dart';
 import 'ReaderDetailsPage.dart';
 import '../InventoryPage.dart';
 import '../OverduePage.dart';
+import 'screens/return_screen.dart';
 
 class UserHomePage extends StatelessWidget {
   @override
@@ -78,6 +80,10 @@ class UserHomePage extends StatelessWidget {
             label: 'Checkout',
             onTap: () {
               // Navigate to Checkout screen or handle the button tap
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CheckoutScreen()),
+              );
             },
           ),
           _buildGridButton(
@@ -86,6 +92,10 @@ class UserHomePage extends StatelessWidget {
             label: 'Return',
             onTap: () {
               // Navigate to Return screen or handle the button tap
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ReturnScreen()),
+              );
             },
           ),
         ],
