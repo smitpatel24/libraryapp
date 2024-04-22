@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:libraryapp/OverdueIssuerPage.dart';
 
 void main() => runApp(MyApp());
 
@@ -65,42 +64,128 @@ class _OverduePageState extends State<OverduePage> {
       'issuedBy': 'Laura Wilson',
       'dueDate': '2023-04-04'
     },
-    // Add more items here
   ];
 
   List<Map<String, String>> itemsToShow = [];
   int currentPage = 0;
-  final int itemsPerPage = 3;
+  final int itemsPerPage = 4;
   String searchText = '';
+  String filterIssuer = '';
+  String sortBy = 'dueDate';  // Default sorting by due date
+  bool isAscending = true;  // Default sorting direction
 
   @override
   void initState() {
     super.initState();
-    itemsToShow = allItems;
+    itemsToShow = List.from(allItems)..sort(_sortList);
   }
 
   void _searchItems(String text) {
     setState(() {
       searchText = text;
-      if (text.isEmpty) {
-        itemsToShow = allItems;
-      } else {
-        itemsToShow = allItems.where((item) {
-          return item['title']!.toLowerCase().contains(text.toLowerCase()) ||
-              item['author']!.toLowerCase().contains(text.toLowerCase()) ||
-              item['issuedBy']!.toLowerCase().contains(text.toLowerCase());
-        }).toList();
-      }
-      currentPage = 0; // Reset to first page
+      _filterItems();
     });
   }
 
-  void _navigateToIssuerPage(String issuer) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => OverdueIssuerPage(issuer: issuer),
-      ),
+  void _filterItems() {
+    setState(() {
+      itemsToShow = allItems.where((item) {
+        return (searchText.isEmpty || item['title']!.toLowerCase().contains(searchText.toLowerCase()) ||
+            item['author']!.toLowerCase().contains(searchText.toLowerCase()) ||
+            item['issuedBy']!.toLowerCase().contains(searchText.toLowerCase())) &&
+            (filterIssuer.isEmpty || item['issuedBy']!.toLowerCase().contains(filterIssuer.toLowerCase()));
+      }).toList();
+      itemsToShow.sort(_sortList);
+      currentPage = 0;
+    });
+  }
+
+  int _sortList(Map<String, String> a, Map<String, String> b) {
+    int orderModifier = isAscending ? 1 : -1;
+    switch (sortBy) {
+      case 'dueDate':
+        return a['dueDate']!.compareTo(b['dueDate']!) * orderModifier;
+      case 'title':
+        return a['title']!.compareTo(b['title']!) * orderModifier;
+      default:
+        return 0;
+    }
+  }
+
+  void _showFilterDialog() {
+    TextEditingController issuerController = TextEditingController(text: filterIssuer);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: Text("Filter and Sort"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    TextField(
+                      controller: issuerController,
+                      decoration: InputDecoration(
+                        labelText: "Filter by Issuer",
+                        hintText: "Enter issuer name",
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Text("Sort by:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ListTile(
+                      title: const Text('Due Date'),
+                      leading: Radio<String>(
+                        value: 'dueDate',
+                        groupValue: sortBy,
+                        onChanged: (value) {
+                          setState(() {
+                            sortBy = value!;
+                          });
+                        },
+                      ),
+                    ),
+                    ListTile(
+                      title: const Text('Title'),
+                      leading: Radio<String>(
+                        value: 'title',
+                        groupValue: sortBy,
+                        onChanged: (value) {
+                          setState(() {
+                            sortBy = value!;
+                          });
+                        },
+                      ),
+                    ),
+                    SwitchListTile(
+                      title: Text('Ascending Order'),
+                      value: isAscending,
+                      onChanged: (bool value) {
+                        setState(() {
+                          isAscending = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Apply'),
+                  onPressed: () {
+                    setState(() {
+                      filterIssuer = issuerController.text;
+                      _filterItems();
+                      Navigator.of(context).pop();
+                    });
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -127,6 +212,12 @@ class _OverduePageState extends State<OverduePage> {
           ),
         ),
         leading: BackButton(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.filter_alt),
+            onPressed: _showFilterDialog,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(24.0),
@@ -136,7 +227,7 @@ class _OverduePageState extends State<OverduePage> {
             SizedBox(height: 20),
             buildSearchBar(),
             SizedBox(height: 24),
-            for (var item in pageItems) buildItem(item, _navigateToIssuerPage),
+            for (var item in pageItems) buildItem(item),
             if (totalPages > 1) buildPagination(totalPages),
           ],
         ),
@@ -151,25 +242,32 @@ class _OverduePageState extends State<OverduePage> {
         color: Colors.white.withOpacity(1),
         borderRadius: BorderRadius.circular(30),
       ),
-      child: TextField(
-        onChanged: _searchItems,
-        style: TextStyle(color: Colors.black),
-        decoration: InputDecoration(
-          hintText: "Search by book name, author, or issuer",
-          hintStyle: TextStyle(color: Colors.black.withOpacity(0.7)),
-          prefixIcon: Icon(Icons.search, color: Colors.black.withOpacity(0.7)),
-          border: InputBorder.none,
-        ),
+      child: Row(
+        children: [
+          Icon(Icons.search, color: Colors.black.withOpacity(0.7)),
+          SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              onChanged: _searchItems,
+              style: TextStyle(color: Colors.black),
+              decoration: InputDecoration(
+                hintText: "Search by book name, author, or issuer",
+                hintStyle: TextStyle(color: Colors.black.withOpacity(0.7)),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget buildItem(Map<String, String> item, Function(String) onPressed) {
+  Widget buildItem(Map<String, String> item) {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      color: Color(0xFF4C4C6D), // Background color of the card
+      color: Color(0xFF4C4C6D),
       margin: EdgeInsets.only(bottom: 16),
       elevation: 8,
       child: Padding(
@@ -199,12 +297,9 @@ class _OverduePageState extends State<OverduePage> {
               'Book ID: ${item['bookId']}',
               style: TextStyle(color: Colors.white70),
             ),
-            InkWell(
-              onTap: () => onPressed(item['issuedBy']!),
-              child: Text(
-                'Issued By: ${item['issuedBy']}',
-                style: TextStyle(color: Colors.blue),
-              ),
+            Text(
+              'Issued By: ${item['issuedBy']}',
+              style: TextStyle(color: Colors.white70),
             ),
             Text(
               'Due Date: ${item['dueDate']}',
@@ -225,7 +320,7 @@ class _OverduePageState extends State<OverduePage> {
             icon: Icon(Icons.chevron_left,
                 color: currentPage > 0 ? Colors.white : Colors.grey),
             onPressed:
-                currentPage > 0 ? () => setState(() => currentPage--) : null,
+            currentPage > 0 ? () => setState(() => currentPage--) : null,
           ),
           ...List.generate(totalPages, (index) {
             return GestureDetector(
@@ -247,8 +342,7 @@ class _OverduePageState extends State<OverduePage> {
           }),
           IconButton(
             icon: Icon(Icons.chevron_right,
-                color:
-                    currentPage < totalPages - 1 ? Colors.white : Colors.grey),
+                color: currentPage < totalPages - 1 ? Colors.white : Colors.grey),
             onPressed: currentPage < totalPages - 1
                 ? () => setState(() => currentPage++)
                 : null,
