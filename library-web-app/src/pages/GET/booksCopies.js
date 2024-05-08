@@ -1,0 +1,135 @@
+import { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
+import styles from "../../styles/Books.module.css"; // Import CSS module for styling
+
+export default function BooksCopies() {
+  const [copies, setCopies] = useState([]);
+  const [filteredCopies, setFilteredCopies] = useState([]);
+  const [filters, setFilters] = useState({
+    copyId: "",
+    bookId: "",
+    bookTitle: "",
+    authorName: "",
+    barcode: "",
+    available: "",
+  });
+
+  useEffect(() => {
+    fetchCopies();
+  }, []);
+
+  async function fetchCopies() {
+    try {
+      const { data, error } = await supabase.from("bookcopiesview").select("*");
+      if (error) throw error;
+      setCopies(data);
+      setFilteredCopies(data); // Initialize filtered copies with all copies
+    } catch (error) {
+      console.error("Error fetching book copies:", error.message);
+    }
+  }
+
+  // Function to handle filtering based on input value
+  const handleFilter = (column, value) => {
+    const filtered = copies.filter((copy) => {
+      console.log(copy); // Log the copy object
+      if (column === "bookId" || column === "copyId") {
+        if (value === "") return true; // Show all copies when ID is empty
+        return parseInt(copy[column]) === parseInt(value);
+      } else if (column === "available") {
+        if (value === "" || value === "all") return true; // Show all copies when available filter is empty
+        const available = value === "yes" || value === "true";
+        return copy[column] === available;
+      } else {
+        const fieldValue = copy[column].toLowerCase();
+        return fieldValue.includes(value.toLowerCase());
+      }
+    });
+    setFilteredCopies(filtered);
+  };
+
+  return (
+    <div>
+      <h1>Book Copies</h1>
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Copy ID</th>
+              <th>Book ID</th>
+              <th>Book Title</th>
+              <th>Author Name</th>
+              <th>Barcode</th>
+              <th>Available</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <input
+                  type="number"
+                  onChange={(e) => handleFilter("copyId", e.target.value)}
+                  className={styles.input}
+                  placeholder="ID"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  onChange={(e) => handleFilter("bookId", e.target.value)}
+                  className={styles.input}
+                  placeholder="ID"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  onChange={(e) => handleFilter("booktitle", e.target.value)}
+                  className={styles.input}
+                  placeholder="Filter by Book Title"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  onChange={(e) => handleFilter("authorname", e.target.value)}
+                  className={styles.input}
+                  placeholder="Filter by Author Name"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  onChange={(e) => handleFilter("barcode", e.target.value)}
+                  className={styles.input}
+                  placeholder="Filter by Barcode"
+                />
+              </td>
+              <td>
+                <select
+                  value={filters.available}
+                  onChange={(e) => handleFilter("available", e.target.value)}
+                >
+                  <option value="">Filter by Available</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="all">All</option>
+                </select>
+              </td>
+            </tr>
+            {filteredCopies.map((copy, index) => (
+              <tr key={index}>
+                <td>{copy.copyid}</td>
+                <td>{copy.bookid}</td>
+                <td>{copy.booktitle}</td>
+                <td>{copy.authorname}</td>
+                <td>{copy.barcode}</td>
+                <td>{copy.available ? "Yes" : "No"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

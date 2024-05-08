@@ -1,0 +1,64 @@
+/* Navigation.module.css */
+
+.nav {
+  background-color: #222;
+  padding: 20px;
+  display: grid; /* Use CSS Grid */
+  grid-template-columns: repeat(4, 1fr); /* Four equal columns */
+  gap: 50px; /* Gap between columns */
+}
+
+.navList {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navItem {
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  color: #fff;
+  font-size: 24px; /* Increased font size for section titles */
+  font-weight: bold; /* Make section titles bold */
+  margin-bottom: 10px;
+}
+
+.subNavList {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.subNavItem {
+  margin-bottom: 10px; /* Increased margin between subnav items */
+  color: beige;
+}
+
+.navLink {
+  display: block;
+  padding: 15px; /* Increased padding for nav links */
+  border-radius: 8px; /* Rounded corners for nav links */
+  text-decoration: none;
+  color: #fff; /* Changed text color to white */
+  background-color: #333; /* Darker background color */
+  transition: background-color 0.3s ease; /* Smooth transition effect */
+}
+
+.navLink:hover {
+  background-color: #555; /* Darker background color on hover */
+}
+
+.linkContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.linkContent h2 {
+  margin: 0 0 5px;
+}
+
+.linkContent p {
+  margin: 0;
+}

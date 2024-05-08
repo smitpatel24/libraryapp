@@ -1,0 +1,125 @@
+/* create.module.css */
+
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+/* Style the form elements */
+.container label {
+  font-weight: bold;
+}
+
+.container select,
+.container input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 2%;
+  margin-top: 2%;
+}
+
+/* Style the button */
+.container button {
+  padding: 10px 20px;
+  background-color: #031930;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.container button:hover {
+  background-color: #0056b3;
+}
+
+/* Style the message */
+.container .message {
+  color: #024c9b;
+  font-weight: bold;
+}
+
+  
+  .message {
+    margin-top: 20px;
+    color: #007bff;
+    font-weight: bold;
+  }
+  
+  .userInputContainer {
+    display: flex;
+    align-items: center;
+  }
+  
+  .userInput {
+    margin-right: 10px;
+  }
+  
+  .orText {
+    margin: 0 10px;
+  }
+  
+  .userSelect {
+    flex: 1;
+  }
+  
+  .getUserButton {
+    margin-left: 10px;
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .userInfo {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .userInfo p {
+    margin: 5px 0;
+  }
+  
+  /* styles.module.css */
+
+.searchHelpContainer {
+  position: relative;
+}
+
+.userInput {
+  width: 100%;
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.searchHelp {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.user {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.user:hover {
+  background-color: #f0f0f0;
+}
