@@ -4,7 +4,7 @@ import styles from "../../styles/create.module.css";
 import UsersSearchHelp from "@/components/UsersSearchHelp";
 import BookCopySearchHelp from "@/components/BookCopySearchHelp";
 
-export default function CreateTransaction() {
+export default function CreateTransactionPage() {
   const [txTypes, setTxTypes] = useState([]);
   const [transactionType, setTransactionType] = useState("");
   const [users, setUsers] = useState([]);

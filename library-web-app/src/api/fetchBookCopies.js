@@ -11,7 +11,7 @@ export function useBookCopies() {
   async function fetchBookCopies() {
     try {
       const { data, error } = await supabase
-        .from('BookCopiesView')
+        .from('bookcopiesview')
         .select('*');
         // .select('CopyID, BookID, Barcode');
       if (error) throw error;

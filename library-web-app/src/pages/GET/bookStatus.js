@@ -1,33 +1,39 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useBookStatusView } from "@/api/fetchBookStatus";
 import styles from "../../styles/Books.module.css"; // Import CSS module for styling
-import { useStatusOptions } from '@/api/fetchBookStatusOptions';
-import { useBookCopies } from "@/api/fetchBookCopies";
+import { useStatusOptions } from "@/api/fetchBookStatusOptions";
 
+export default function BookStatus() {
+  const bookStatus = useBookStatusView();
+  const statusOptions = useStatusOptions();
+  const [filteredStatus, setFilteredStatus] = useState([]);
 
-export default function BooksCopies() {
-  const copies = useBookCopies()
-  const statusOptions = useStatusOptions()
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 2);
 
-  const [filteredCopies, setFilteredCopies] = useState([]);
   const [filters, setFilters] = useState({
     copyId: "",
     bookId: "",
     bookTitle: "",
     authorName: "",
     barcode: "",
-    available: "",
+    status: "",
+    startDate: new Date(0).toISOString().split('T')[0], // Most previous date possible
+    endDate: tomorrow.toISOString().split('T')[0], // Tomorrow's date
   });
 
   useEffect(() => {
-    setFilteredCopies(copies)
-  }, [copies]);
+    setFilteredStatus(bookStatus);
+  }, [bookStatus]);
 
-  // Function to handle filtering based on input value
   const handleFilter = (column, value) => {
-    const filtered = copies.filter((copy) => {
-      console.log(copy); // Log the copy object
-      if (column === "bookId" || column === "copyId") {
-        if (value === "") return true; // Show all copies when ID is empty
+    setFilters((prevFilters) => ({ ...prevFilters, [column]: value }));
+
+    const filtered = bookStatus.filter((copy) => {
+      console.log(copy, column, value); // Log the copy object
+      if (column === "bookid" || column === "copyid") {
+        if (value < 1) return true; // Show all copies when ID is empty
         return parseInt(copy[column]) === parseInt(value);
       } else if (column === "available") {
         if (value === "" || value === "all") return true; // Show all copies when available filter is empty
@@ -36,18 +42,39 @@ export default function BooksCopies() {
       } else if (column === "status") {
         if (value === "" || value === "all") return true; // Show all copies when status filter is empty
         return copy.status === value;
-      } else {
+      } else if (column === "startDate" || column === "endDate") {
+        const startDate = column === "startDate" ? new Date(value) : new Date(filters.startDate);
+        const endDate = column === "endDate" ? new Date(value) : new Date(filters.endDate);
+        const copyDate = new Date(copy.statusdate);
+
+        console.log("copyDate:", copyDate);
+        console.log("startDate:", startDate);
+        console.log("endDate:", endDate);
+
+        if (startDate && endDate) {
+          console.log(
+            "copyDate >= startDate && copyDate <= endDate",
+            copyDate >= startDate && copyDate <= endDate
+          );
+          return copyDate >= startDate && copyDate <= endDate;
+        } else if (startDate) {
+          console.log("copyDate >= startDate", copyDate >= startDate);
+          return copyDate >= startDate;
+        } else if (endDate) {
+          console.log("copyDate <= endDate", copyDate <= endDate);
+          return copyDate <= endDate;
+        }
+        return true;
         const fieldValue = copy[column].toLowerCase();
         return fieldValue.includes(value.toLowerCase());
       }
     });
-    setFilteredCopies(filtered);
+    setFilteredStatus(filtered);
   };
-  console.log("copies", copies);
-  console.log("StatusOptions", statusOptions);
+  console.log("filtered", filteredStatus);
   return (
     <div>
-      <h1>Book Copies</h1>
+      <h1>Book Status</h1>
       <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead>
@@ -57,8 +84,8 @@ export default function BooksCopies() {
               <th>Book Title</th>
               <th>Author Name</th>
               <th>Barcode</th>
-              <th>Available</th>
               <th>Status</th>
+              <th>Status Date</th>
             </tr>
           </thead>
           <tbody>
@@ -66,7 +93,7 @@ export default function BooksCopies() {
               <td>
                 <input
                   type="number"
-                  onChange={(e) => handleFilter("copyId", e.target.value)}
+                  onChange={(e) => handleFilter("copyid", e.target.value)}
                   className={styles.input}
                   placeholder="ID"
                 />
@@ -74,7 +101,7 @@ export default function BooksCopies() {
               <td>
                 <input
                   type="number"
-                  onChange={(e) => handleFilter("bookId", e.target.value)}
+                  onChange={(e) => handleFilter("bookid", e.target.value)}
                   className={styles.input}
                   placeholder="ID"
                 />
@@ -105,17 +132,6 @@ export default function BooksCopies() {
               </td>
               <td>
                 <select
-                  value={filters.available}
-                  onChange={(e) => handleFilter("available", e.target.value)}
-                >
-                  <option value="">Filter by Available</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                  <option value="all">All</option>
-                </select>
-              </td>
-              <td>
-                <select
                   value={filters.status}
                   onChange={(e) => handleFilter("status", e.target.value)}
                 >
@@ -128,16 +144,31 @@ export default function BooksCopies() {
                   <option value="all">All</option>
                 </select>
               </td>
+              <td>
+                <input
+                  type="date"
+                  onChange={(e) => handleFilter("startDate", e.target.value)}
+                  className={styles.input}
+                  placeholder="Start Date"
+                />
+                to
+                <input
+                  type="date"
+                  onChange={(e) => handleFilter("endDate", e.target.value)}
+                  className={styles.input}
+                  placeholder="End Date"
+                />
+              </td>
             </tr>
-            {filteredCopies.map((copy, index) => (
+            {filteredStatus.map((status, index) => (
               <tr key={index}>
-                <td>{copy.copyid}</td>
-                <td>{copy.bookid}</td>
-                <td>{copy.booktitle}</td>
-                <td>{copy.authorname}</td>
-                <td>{copy.barcode}</td>
-                <td>{copy.available ? "Yes" : "No"}</td>
-                <td>{copy.status}</td>
+                <td>{status.copyid}</td>
+                <td>{status.bookid}</td>
+                <td>{status.booktitle}</td>
+                <td>{status.authorname}</td>
+                <td>{status.barcode}</td>
+                <td>{status.status}</td>
+                <td>{new Date(status.statusdate).toLocaleDateString()}</td>
               </tr>
             ))}
           </tbody>

@@ -1,27 +1,16 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import styles from '../../styles/Authors.module.css'; // Import CSS module for styling
+import { useAuthors } from "@/api/fetchAuthors";
 
 export default function Authors() {
-  const [authors, setAuthors] = useState([]);
+  // const [authors, setAuthors] = useState([]);
+  const authors = useAuthors();
   const [filteredAuthors, setFilteredAuthors] = useState([]); // Corrected variable name
 
   useEffect(() => {
-    fetchAuthors();
-  }, []);
-
-  async function fetchAuthors() {
-    try {
-      const { data, error } = await supabase
-        .from('authors')
-        .select('*');
-      if (error) throw error;
-      setAuthors(data);
-      setFilteredAuthors(data); // Initialize filtered authors with all authors
-    } catch (error) {
-      console.error('Error fetching authors:', error.message);
-    }
-  }
+    setFilteredAuthors(authors);
+  }, [authors]);
 
   // Function to handle filtering based on input value
   const handleFilter = (column, value) => {

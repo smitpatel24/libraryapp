@@ -10,7 +10,7 @@ import { createBook } from "@/api/createBook";
 import { useBookCopies } from "@/api/fetchBookCopies";
 import { createBookCopy } from "@/api/createBookCopy";
 
-export default function CreateBookCopy() {
+export default function CreateBookCopyPage() {
   const [bookCopy, setBookCopy] = useState({ bookId: "", barcode: "" });
   const [message, setMessage] = useState("");
   const [selectedAuthor, setSelectedAuthor] = useState(null);
@@ -61,14 +61,14 @@ export default function CreateBookCopy() {
         setMessage("Please share a barcode.");
         return;
       }
-  
+
       console.log(
         "Creating a book copy: ",
         selectedBook,
         selectedAuthor,
         barcode
       );
-  
+
       // Check if barcode already exists in bookCopies
       const existingBookCopy = bookCopies.find(
         (copy) => copy.barcode === barcode
@@ -79,7 +79,7 @@ export default function CreateBookCopy() {
         );
         return;
       }
-  
+
       let selectedAuthorId, selectedBookId;
       if (!selectedAuthor.authorid) {
         // Create author if not found
@@ -94,7 +94,7 @@ export default function CreateBookCopy() {
         // Use the existing author's ID
         selectedAuthorId = selectedAuthor.authorid;
       }
-  
+
       // Check if selected book exists in books
       // const existingBook = books.find((book) => book.title === selectedBook);
       if (!selectedBook.bookId) {
@@ -108,16 +108,20 @@ export default function CreateBookCopy() {
         selectedBookId = newBook.bookId;
       } else {
         // Use the existing book's ID
-        selectedBookId = selectedBook.bookId
+        selectedBookId = selectedBook.bookId;
       }
-      
+
       console.log(
         "Creating a book copy: ",
         selectedBookId,
         selectedAuthorId,
-        barcode)
+        barcode
+      );
       // Create book copy
-      const { success, message } = await createBookCopy(selectedBookId, barcode);
+      const { success, message } = await createBookCopy(
+        selectedBookId,
+        barcode
+      );
       if (success) {
         setMessage(message);
         setBookCopy({ bookId: selectedBookId, barcode: barcode });
@@ -129,7 +133,6 @@ export default function CreateBookCopy() {
       setMessage(`Error creating book copy: ${error.message}`);
     }
   };
-  
 
   return (
     <div className={styles.container}>

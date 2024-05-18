@@ -2,7 +2,7 @@ import { useState } from "react";
 import styles from '../../styles/create.module.css';
 import { createAuthor } from '../../api/createAuthor';
 
-export default function CreateAuthor() {
+export default function CreateAuthorPage() {
   const [authorName, setAuthorName] = useState("");
   const [message, setMessage] = useState("");
 

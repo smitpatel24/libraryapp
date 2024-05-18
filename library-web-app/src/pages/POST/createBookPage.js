@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useAuthors } from '../../api/fetchAuthors';
-import { createBook } from '../../api/createBooks';
-import styles from '../../styles/create.module.css';
+import { useState, useEffect } from "react";
+import { useAuthors } from "@/api/fetchAuthors";
+import { createBook } from "@/api/fetchAuthors";
+import styles from "../../styles/create.module.css";
 
-export default function CreateBook() {
-  const [book, setBook] = useState({ title: '', authorId: '' });
+export default function CreateBookPage() {
+  const [book, setBook] = useState({ title: "", authorId: "" });
   const authors = useAuthors();
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -22,12 +22,12 @@ export default function CreateBook() {
       const { success, message } = await createBook(book.title, book.authorId);
       setMessage(message);
       if (success) {
-        setBook({ title: '', authorId: '' }); // Clear form after successful submission
+        setBook({ title: "", authorId: "" }); // Clear form after successful submission
         // Redirect to the authors page after creating a new book
         window.location.href = "/GET/books";
       }
     } catch (error) {
-      console.error('Error creating book:', error.message);
+      console.error("Error creating book:", error.message);
       setMessage(`Error creating book: ${error.message}`);
     }
   };

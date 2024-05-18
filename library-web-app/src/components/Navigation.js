@@ -9,19 +9,19 @@ const Navigation = () => {
         <h2 className={styles.sectionTitle}>Create</h2>
         <ul className={styles.subNavList}>
           <li className={styles.subNavItem}>
-            <Link href="/POST/createAuthor">Create Author</Link>
+            <Link href="/POST/createAuthorPage">Create Author</Link>
           </li>
           <li className={styles.subNavItem}>
-            <Link href="/POST/createBook">Create Book</Link>
+            <Link href="/POST/createBookPage">Create Book</Link>
           </li>
           <li className={styles.subNavItem}>
-            <Link href="/POST/createBookCopy">Create Book Copy</Link>
+            <Link href="/POST/createBookCopyPage">Create Book Copy</Link>
           </li>
           <li className={styles.subNavItem}>
-            <Link href="/POST/createTransaction">Create Transaction</Link>
+            <Link href="/POST/createTransactionPage">Create Transaction</Link>
           </li>
           <li className={styles.subNavItem}>
-            <Link href="/POST/createUser">Create User</Link>
+            <Link href="/POST/createUserPage">Create User</Link>
           </li>
         </ul>
       </div>
@@ -38,6 +38,9 @@ const Navigation = () => {
           </li>
           <li className={styles.subNavItem}>
             <Link href="/GET/booksCopies">View Book Copies</Link>
+          </li>
+          <li className={styles.subNavItem}>
+            <Link href="/GET/bookStatus">View Books' Status</Link>
           </li>
           <li className={styles.subNavItem}>
             <Link href="/GET/transactions">View Transactions</Link>
