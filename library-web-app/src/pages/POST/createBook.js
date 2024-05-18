@@ -1,27 +1,12 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { useAuthors } from '../../api/fetchAuthors';
+import { createBook } from '../../api/createBooks';
 import styles from '../../styles/create.module.css';
 
 export default function CreateBook() {
   const [book, setBook] = useState({ title: '', authorId: '' });
-  const [authors, setAuthors] = useState([]);
+  const authors = useAuthors();
   const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    fetchAuthors();
-  }, []);
-
-  async function fetchAuthors() {
-    try {
-      const { data, error } = await supabase
-        .from('authors')
-        .select('authorid, authorname');
-      if (error) throw error;
-      setAuthors(data);
-    } catch (error) {
-      console.error('Error fetching authors:', error.message);
-    }
-  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,15 +19,13 @@ export default function CreateBook() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data, error } = await supabase
-        .from('books')
-        .insert([{ title: book.title, authorid: book.authorId }]);
-      if (error) throw error;
-      console.log('Book created successfully:', data);
-      setMessage('Book created successfully');
-      setBook({ title: '', authorId: '' }); // Clear form after successful submission
-      // Redirect to the authors page after creating a new author
-      window.location.href = "/GET/books";
+      const { success, message } = await createBook(book.title, book.authorId);
+      setMessage(message);
+      if (success) {
+        setBook({ title: '', authorId: '' }); // Clear form after successful submission
+        // Redirect to the authors page after creating a new book
+        window.location.href = "/GET/books";
+      }
     } catch (error) {
       console.error('Error creating book:', error.message);
       setMessage(`Error creating book: ${error.message}`);

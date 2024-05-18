@@ -13,9 +13,11 @@ export default function BooksCopies() {
     barcode: "",
     available: "",
   });
+  const [statusOptions, setStatusOptions] = useState([]);
 
   useEffect(() => {
     fetchCopies();
+    fetchStatusOptions();
   }, []);
 
   async function fetchCopies() {
@@ -26,6 +28,19 @@ export default function BooksCopies() {
       setFilteredCopies(data); // Initialize filtered copies with all copies
     } catch (error) {
       console.error("Error fetching book copies:", error.message);
+    }
+  }
+
+  async function fetchStatusOptions() {
+    try {
+      const { data, error } = await supabase
+        .from("bookstatustypes")
+        .select("status");
+      if (error) throw error;
+      setStatusOptions(data);
+      console.log(data);
+    } catch (error) {
+      console.error("Error fetching status options:", error.message);
     }
   }
 
@@ -40,6 +55,9 @@ export default function BooksCopies() {
         if (value === "" || value === "all") return true; // Show all copies when available filter is empty
         const available = value === "yes" || value === "true";
         return copy[column] === available;
+      } else if (column === "status") {
+        if (value === "" || value === "all") return true; // Show all copies when status filter is empty
+        return copy.status === value;
       } else {
         const fieldValue = copy[column].toLowerCase();
         return fieldValue.includes(value.toLowerCase());
@@ -47,7 +65,8 @@ export default function BooksCopies() {
     });
     setFilteredCopies(filtered);
   };
-
+  console.log("copies", copies);
+  console.log("StatusOptions", statusOptions);
   return (
     <div>
       <h1>Book Copies</h1>
@@ -61,6 +80,7 @@ export default function BooksCopies() {
               <th>Author Name</th>
               <th>Barcode</th>
               <th>Available</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -116,6 +136,20 @@ export default function BooksCopies() {
                   <option value="all">All</option>
                 </select>
               </td>
+              <td>
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilter("status", e.target.value)}
+                >
+                  <option value="">Filter by Status</option>
+                  {statusOptions.map((status, index) => (
+                    <option key={index} value={status.status}>
+                      {status.status}
+                    </option>
+                  ))}
+                  <option value="all">All</option>
+                </select>
+              </td>
             </tr>
             {filteredCopies.map((copy, index) => (
               <tr key={index}>
@@ -125,6 +159,7 @@ export default function BooksCopies() {
                 <td>{copy.authorname}</td>
                 <td>{copy.barcode}</td>
                 <td>{copy.available ? "Yes" : "No"}</td>
+                <td>{copy.status}</td>
               </tr>
             ))}
           </tbody>

@@ -1,35 +1,24 @@
-// CreateAuthor.js
-
 import { useState } from "react";
-import { supabase } from "../../lib/supabase";
 import styles from '../../styles/create.module.css';
+import { createAuthor } from '../../api/createAuthor';
 
 export default function CreateAuthor() {
-  const [author, setAuthor] = useState({ authorid: "", authorname: "" });
+  const [authorName, setAuthorName] = useState("");
   const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setAuthor((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
+    setAuthorName(e.target.value);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const { data, error } = await supabase
-        .from("authors")
-        .insert([{ authorname: author.authorname }]); // Corrected insertion
-      if (error) throw error;
-      console.log("Author created successfully:", data);
-      setMessage('');
+    const { success, error } = await createAuthor(authorName);
+    if (success) {
+      setMessage("");
       // Redirect to the authors page after creating a new author
       window.location.href = "/GET/authors";
-    } catch (error) {
-      console.error("Error creating author:", error.message);
-      setMessage(`Error creating author: ${error.message}`);
+    } else {
+      setMessage(`Error creating author: ${error}`);
     }
   };
 
@@ -43,7 +32,7 @@ export default function CreateAuthor() {
             type="text"
             id="authorname"
             name="authorname"
-            value={author.authorname}
+            value={authorName}
             onChange={handleChange}
           />
         </div>
