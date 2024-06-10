@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/supabase_manager.dart';  // Adjust the path according to your project structure
 
 void main() => runApp(MyApp());
 
@@ -24,79 +25,7 @@ class InventoryPage extends StatefulWidget {
 }
 
 class _InventoryPageState extends State<InventoryPage> {
-  final List<Map<String, dynamic>> allItems = [
-    {
-      'title': "Aurora's Awakening",
-      'author': 'Luna Evergreen',
-      'libraryId': 'LB7834',
-      'bookId': 'PR8923W6',
-      'availability': 5
-    },
-    {
-      'title': "The Great Gatsby",
-      'author': 'F. Scott Fitzgerald',
-      'libraryId': 'LB001',
-      'bookId': 'BK001',
-      'availability': 3
-    },
-    {
-      'title': "To Kill a Mockingbird",
-      'author': 'Harper Lee',
-      'libraryId': 'LB002',
-      'bookId': 'BK002',
-      'availability': 2
-    },
-    {
-      'title': "1984",
-      'author': 'George Orwell',
-      'libraryId': 'LB003',
-      'bookId': 'BK003',
-      'availability': 4
-    },
-    {
-      'title': "Pride and Prejudice",
-      'author': 'Jane Austen',
-      'libraryId': 'LB004',
-      'bookId': 'BK004',
-      'availability': 1
-    },
-    {
-      'title': "The Catcher in the Rye",
-      'author': 'J.D. Salinger',
-      'libraryId': 'LB005',
-      'bookId': 'BK005',
-      'availability': 8
-    },
-    {
-      'title': "Moby Dick",
-      'author': 'Herman Melville',
-      'libraryId': 'LB006',
-      'bookId': 'BK006',
-      'availability': 4
-    },
-    {
-      'title': "The House of Dragons",
-      'author': 'G.R.R Martin',
-      'libraryId': 'LB007',
-      'bookId': 'BK007',
-      'availability': 6
-    },
-    {
-      'title': "Game of Thrones",
-      'author': 'Martin',
-      'libraryId': 'LB007',
-      'bookId': 'BK007',
-      'availability': 2
-    },
-    {
-      'title': "Rich Dad Poor Dad",
-      'author': 'Robert Kiyosaki',
-      'libraryId': 'LB007',
-      'bookId': 'BK007',
-      'availability': 10
-    }
-  ];
-
+  List<Map<String, dynamic>> allItems = [];
   List<Map<String, dynamic>> itemsToShow = [];
   int currentPage = 0;
   final int itemsPerPage = 4;  // Now set to 4 items per page
@@ -109,7 +38,16 @@ class _InventoryPageState extends State<InventoryPage> {
   @override
   void initState() {
     super.initState();
-    itemsToShow = List.from(allItems)..sort(_sortList);
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    SupabaseManager supabaseManager = SupabaseManager();
+    List<Map<String, dynamic>> fetchedItems = await supabaseManager.fetchAllBooksInfo();
+    setState(() {
+      allItems = fetchedItems;
+      itemsToShow = List.from(allItems)..sort(_sortList);
+    });
   }
 
   void _searchItems(String text) {
@@ -122,9 +60,9 @@ class _InventoryPageState extends State<InventoryPage> {
   void _filterItems() {
     setState(() {
       itemsToShow = allItems.where((item) {
-        return (filterTitle.isEmpty || item['title'].toLowerCase().contains(filterTitle.toLowerCase())) &&
-            (filterAuthor.isEmpty || item['author'].toLowerCase().contains(filterAuthor.toLowerCase())) &&
-            (searchText.isEmpty || item['title'].toLowerCase().contains(searchText.toLowerCase()) || item['author'].toLowerCase().contains(searchText.toLowerCase()));
+        return (filterTitle.isEmpty || item['bookname'].toLowerCase().contains(filterTitle.toLowerCase())) &&
+            (filterAuthor.isEmpty || item['authorname'].toLowerCase().contains(filterAuthor.toLowerCase())) &&
+            (searchText.isEmpty || item['bookname'].toLowerCase().contains(searchText.toLowerCase()) || item['authorname'].toLowerCase().contains(searchText.toLowerCase()));
       }).toList();
       itemsToShow.sort(_sortList);
       currentPage = 0;
@@ -135,11 +73,11 @@ class _InventoryPageState extends State<InventoryPage> {
     int orderModifier = isAscending ? 1 : -1;
     switch (sortBy) {
       case 'title':
-        return a['title'].compareTo(b['title']) * orderModifier;
+        return a['bookname'].compareTo(b['bookname']) * orderModifier;
       case 'author':
-        return a['author'].compareTo(b['author']) * orderModifier;
+        return a['authorname'].compareTo(b['authorname']) * orderModifier;
       case 'availability':
-        return b['availability'].compareTo(a['availability']) * orderModifier;
+        return b['available'].compareTo(a['available']) * orderModifier;
       default:
         return 0;
     }
@@ -341,7 +279,7 @@ class _InventoryPageState extends State<InventoryPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              item['title'],
+              item['bookname'],
               style: Theme.of(context)
                   .textTheme
                   .titleLarge
@@ -349,22 +287,25 @@ class _InventoryPageState extends State<InventoryPage> {
             ),
             SizedBox(height: 4),
             Text(
-              item['author'],
-              style: TextStyle(color: Colors.white),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Library ID: ${item['libraryId']}',
+              item['authorname'],
               style: TextStyle(color: Colors.white),
             ),
             SizedBox(height: 4),
             Text(
-              'Book ID: ${item['bookId']}',
+              'Book ID: ${item['bookid']}',
               style: TextStyle(color: Colors.white),
             ),
             SizedBox(height: 4),
             Text(
-              'Availability: ${item['availability']} units',
+              'Total Copies: ${item['totalcopies']}',
+              style: TextStyle(color: Colors.white),
+            ),
+            Text(
+              'Available: ${item['available']}',
+              style: TextStyle(color: Colors.white),
+            ),
+            Text(
+              'Checked Out: ${item['checkedout']}',
               style: TextStyle(color: Colors.white),
             ),
           ],

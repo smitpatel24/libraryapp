@@ -1,6 +1,7 @@
 // ignore_for_file: file_names
 
 import 'package:flutter/material.dart';
+import '../services/supabase_manager.dart';  // Ensure this import points to your SupabaseManager class correctly
 
 class AddBookPage extends StatefulWidget {
   @override
@@ -12,9 +13,56 @@ class _AddBookPageState extends State<AddBookPage> {
   final TextEditingController _authorNameController = TextEditingController();
   final TextEditingController _bookIdController = TextEditingController();
 
-  void _addBook() {
-    // Logic to add a book goes here
+  // Begin - Logic to add a book with author handling
+
+  String normalizeAuthorName(String authorName) {
+    // Convert to lower case
+    String normalized = authorName.toLowerCase();
+
+    // Remove all non-alphanumeric characters except spaces
+    normalized = normalized.replaceAll(RegExp(r'[^\w\s]'), '');
+
+    // Trim leading and trailing spaces
+    normalized = normalized.trim();
+
+    return normalized;
   }
+
+  void _addBook() async {
+    print("Attempting to add a book");
+    try {
+      String normalized_aname = normalizeAuthorName(_authorNameController.text);
+      int? authorId = await SupabaseManager().ensureAuthorExists(normalized_aname, int.parse(_bookIdController.text));
+      if (authorId == -1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Book ID already exists. Please try again.'))
+        );
+        return;
+      }
+      if (authorId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Author could not be verified or added.'))
+        );
+        return;
+      }
+      await SupabaseManager().addBook(
+          _bookIdController.text,
+          _bookNameController.text,
+          authorId
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Book added successfully!'))
+      );
+      _bookIdController.clear();
+      _bookNameController.clear();
+      _authorNameController.clear();
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add book: $error'))
+      );
+    }
+  }
+  // End - Logic to add a book with author handling
 
   void _scanBarcode() {
     // Logic to scan a barcode goes here

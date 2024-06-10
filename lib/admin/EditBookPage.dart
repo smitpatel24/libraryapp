@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/supabase_manager.dart';
 
 class EditBookPage extends StatefulWidget {
   final Map<String, String> bookDetails;
@@ -25,8 +26,19 @@ class _EditBookPageState extends State<EditBookPage> {
         TextEditingController(text: widget.bookDetails['bookId']);
   }
 
-  void _updateBookDetails() {
-    // Logic to update book details goes here
+  void _updateBookDetails() async {
+    String bookId = _bookIdController.text;
+    String bookName = _bookNameController.text;
+    String authorName = _authorNameController.text;
+
+    SupabaseManager supabaseManager = SupabaseManager();
+    await supabaseManager.updateBookDetails(bookId, bookName, authorName);
+
+    // Show a success message and navigate back
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Book details updated successfully')),
+    );
+    Navigator.of(context).pop();
   }
 
   void _updateBarcode() {
@@ -55,19 +67,20 @@ class _EditBookPageState extends State<EditBookPage> {
             _buildTextField(
               label: 'Book Name',
               controller: _bookNameController,
-              isPassword: false, // Adjust based on your field
+              isPassword: false,
             ),
             SizedBox(height: 20),
             _buildTextField(
               label: 'Author Name',
               controller: _authorNameController,
-              isPassword: false, // Adjust based on your field
+              isPassword: false,
             ),
             SizedBox(height: 20),
             _buildTextField(
               label: 'Book ID',
               controller: _bookIdController,
-              isPassword: false, // Adjust based on your field
+              isPassword: false,
+              readOnly: true, // Make the book ID field read-only
             ),
             SizedBox(height: 30),
             InkWell(
@@ -83,7 +96,6 @@ class _EditBookPageState extends State<EditBookPage> {
                     Icon(Icons.camera_alt, color: Colors.white54),
                     Text('Update barcode',
                         style: TextStyle(color: Colors.white70)),
-                    // Display current barcode, can be a placeholder or fetched data
                     Text('315468951018784',
                         style: TextStyle(color: Colors.white)),
                   ],
@@ -98,7 +110,7 @@ class _EditBookPageState extends State<EditBookPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),
                 ),
-                foregroundColor: Colors.white, // Text color
+                foregroundColor: Colors.white,
               ),
               onPressed: _updateBookDetails,
               child: Text('Update Book', style: TextStyle(fontSize: 18)),
@@ -106,12 +118,12 @@ class _EditBookPageState extends State<EditBookPage> {
             SizedBox(height: 16),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF935757), // A warm red/brown color
+                backgroundColor: Color(0xFF935757),
                 padding: EdgeInsets.symmetric(vertical: 16.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),
                 ),
-                foregroundColor: Colors.white, // Text color
+                foregroundColor: Colors.white,
               ),
               onPressed: _deleteBook,
               child: Text('Delete Book', style: TextStyle(fontSize: 18)),
@@ -126,10 +138,12 @@ class _EditBookPageState extends State<EditBookPage> {
     required String label,
     required TextEditingController controller,
     bool isPassword = false,
+    bool readOnly = false,
   }) {
     return TextField(
       controller: controller,
       obscureText: isPassword,
+      readOnly: readOnly,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Colors.white70),
@@ -141,7 +155,6 @@ class _EditBookPageState extends State<EditBookPage> {
         focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Colors.orange, width: 2.0),
         ),
-        // Conditionally show the icon if it's a password field
         suffixIcon: isPassword
             ? Icon(Icons.visibility_off, color: Colors.white70)
             : null,
@@ -160,9 +173,9 @@ class _EditBookPageState extends State<EditBookPage> {
 }
 
 void main() => runApp(MaterialApp(
-      home: EditBookPage(bookDetails: {
-        'title': 'Sample Book',
-        'author': 'Author Name',
-        'bookId': '123456',
-      }),
-    ));
+  home: EditBookPage(bookDetails: {
+    'title': 'Sample Book',
+    'author': 'Author Name',
+    'bookId': '123456',
+  }),
+));

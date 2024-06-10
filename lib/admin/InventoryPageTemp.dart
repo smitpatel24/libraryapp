@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../services/supabase_manager.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
