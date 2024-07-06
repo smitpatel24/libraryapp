@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'SignInScreen.dart';
+import 'admin/AdminHomePage.dart';
+import 'user/UserHomePage.dart';
+import '../services/supabase_manager.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,7 +27,57 @@ class MyApp extends StatelessWidget {
           visualDensity: VisualDensity.adaptivePlatformDensity,
           fontFamily: 'Mulish', // Ensure this font is in your pubspec.yaml
         ),
-        home: const StartScreen(),
+        home: const InitialScreen(),
+      ),
+    );
+  }
+}
+
+class InitialScreen extends StatefulWidget {
+  const InitialScreen({super.key});
+
+  @override
+  _InitialScreenState createState() => _InitialScreenState();
+}
+
+class _InitialScreenState extends State<InitialScreen> {
+  final SupabaseManager _supabaseManager = SupabaseManager();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginState();
+  }
+
+  Future<void> _checkLoginState() async {
+    bool isLoggedIn = await _supabaseManager.isLoggedIn();
+    if (isLoggedIn) {
+      int? userType = await _supabaseManager.getUserType();
+      if (userType == 2) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => AdminHomePage()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => UserHomePage()),
+        );
+      }
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const StartScreen()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: CircularProgressIndicator(),
       ),
     );
   }
@@ -56,8 +110,7 @@ class StartScreen extends StatelessWidget {
                 Text(
                   'Sankofa',
                   style: TextStyle(
-                    fontFamily:
-                        'DM Sans', // Ensure this font is in your pubspec.yaml
+                    fontFamily: 'DM Sans', // Ensure this font is in your pubspec.yaml
                     fontSize: 26,
                     fontWeight: FontWeight.w500,
                     color: Colors.white,
@@ -78,8 +131,7 @@ class StartScreen extends StatelessWidget {
                 ),
                 Spacer(),
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       minimumSize: Size.fromHeight(50),

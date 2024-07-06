@@ -1,6 +1,9 @@
-// ignore_for_file: file_names
-
 import 'package:flutter/material.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 import '../services/supabase_manager.dart';  // Ensure this import points to your SupabaseManager class correctly
 
 class AddBookPage extends StatefulWidget {
@@ -12,19 +15,22 @@ class _AddBookPageState extends State<AddBookPage> {
   final TextEditingController _bookNameController = TextEditingController();
   final TextEditingController _authorNameController = TextEditingController();
   final TextEditingController _bookIdController = TextEditingController();
+  final TextEditingController _barcodeIdController = TextEditingController();
+  File? _barcodeImage;
 
-  // Begin - Logic to add a book with author handling
+  @override
+  void dispose() {
+    _bookNameController.dispose();
+    _authorNameController.dispose();
+    _bookIdController.dispose();
+    _barcodeIdController.dispose();
+    super.dispose();
+  }
 
   String normalizeAuthorName(String authorName) {
-    // Convert to lower case
     String normalized = authorName.toLowerCase();
-
-    // Remove all non-alphanumeric characters except spaces
     normalized = normalized.replaceAll(RegExp(r'[^\w\s]'), '');
-
-    // Trim leading and trailing spaces
     normalized = normalized.trim();
-
     return normalized;
   }
 
@@ -34,15 +40,19 @@ class _AddBookPageState extends State<AddBookPage> {
       String normalized_aname = normalizeAuthorName(_authorNameController.text);
       int? authorId = await SupabaseManager().ensureAuthorExists(normalized_aname, int.parse(_bookIdController.text));
       if (authorId == -1) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Book ID already exists. Please try again.'))
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Book ID already exists. Please try again.'))
+          );
+        }
         return;
       }
       if (authorId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Author could not be verified or added.'))
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Author could not be verified or added.'))
+          );
+        }
         return;
       }
       await SupabaseManager().addBook(
@@ -50,22 +60,62 @@ class _AddBookPageState extends State<AddBookPage> {
           _bookNameController.text,
           authorId
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Book added successfully!'))
-      );
-      _bookIdController.clear();
-      _bookNameController.clear();
-      _authorNameController.clear();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Book added successfully!'))
+        );
+        _bookIdController.clear();
+        _bookNameController.clear();
+        _authorNameController.clear();
+        _barcodeIdController.clear();
+        setState(() {
+          _barcodeImage = null;
+        });
+      }
     } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add book: $error'))
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to add book: $error'))
+        );
+      }
     }
   }
-  // End - Logic to add a book with author handling
 
-  void _scanBarcode() {
-    // Logic to scan a barcode goes here
+  Future<void> _scanBarcode() async {
+    String barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+        "#ff6666",
+        "Cancel",
+        true,
+        ScanMode.BARCODE
+    );
+    if (barcodeScanRes != "-1" && mounted) {
+      setState(() {
+        _barcodeIdController.text = barcodeScanRes;
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+
+    if (pickedFile != null) {
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = path.join(directory.path, '${DateTime.now().millisecondsSinceEpoch}.png');
+      final File localImage = await File(pickedFile.path).copy(filePath);
+
+      if (mounted) {
+        setState(() {
+          _barcodeImage = localImage;
+        });
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No image selected.'))
+        );
+      }
+    }
   }
 
   @override
@@ -100,23 +150,55 @@ class _AddBookPageState extends State<AddBookPage> {
                 label: 'Author Name', controller: _authorNameController),
             const SizedBox(height: 20),
             _buildTextField(label: 'Book ID', controller: _bookIdController),
+            const SizedBox(height: 20),
+            _buildTextField(label: 'Barcode ID', controller: _barcodeIdController),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF615793),
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+              onPressed: _scanBarcode,
+              child: const Text('Scan Barcode',
+                  style: TextStyle(fontSize: 18, color: Colors.white)),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF615793),
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+              onPressed: _pickImage,
+              child: const Text('Capture Barcode Image',
+                  style: TextStyle(fontSize: 18, color: Colors.white)),
+            ),
             const SizedBox(height: 30),
             InkWell(
-              onTap: _scanBarcode,
+              onTap: _pickImage,
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 15.0),
+                height: 200,
                 decoration: BoxDecoration(
                   color: Colors.white12,
                   borderRadius: BorderRadius.circular(10.0),
+                  image: _barcodeImage != null ? DecorationImage(
+                    image: FileImage(_barcodeImage!),
+                    fit: BoxFit.cover,
+                  ) : null,
                 ),
-                child: const Column(
+                child: _barcodeImage == null ? const Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.camera_alt, color: Colors.white54),
-                    Text('Scan barcode below:',
+                    Text('Capture barcode image:',
                         style: TextStyle(color: Colors.white70)),
                   ],
-                ),
+                ) : null,
               ),
             ),
             const SizedBox(height: 30),
@@ -160,14 +242,6 @@ class _AddBookPageState extends State<AddBookPage> {
       ),
       style: const TextStyle(color: Colors.white70),
     );
-  }
-
-  @override
-  void dispose() {
-    _bookNameController.dispose();
-    _authorNameController.dispose();
-    _bookIdController.dispose();
-    super.dispose();
   }
 }
 

@@ -1,22 +1,8 @@
 import 'package:flutter/material.dart';
 import 'admin/AdminHomePage.dart';
 import 'user/UserHomePage.dart';
-import 'BarcodeScannerScreen.dart'; // Make sure to create this screen for barcode scanning functionality.
-
-void main() => runApp(MyApp());
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: SignInScreen(),
-    );
-  }
-}
+import 'BarcodeScannerScreen.dart';
+import '../services/supabase_manager.dart';
 
 class SignInScreen extends StatefulWidget {
   @override
@@ -26,20 +12,25 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final SupabaseManager _supabaseManager = SupabaseManager();
 
-  void _attemptSignIn() {
+  void _attemptSignIn() async {
     final String username = _usernameController.text;
     final String password = _passwordController.text;
-    if (username == 'Admin' && password == 'AdminPassword') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => AdminHomePage()),
-      );
-    } else if (username == 'User' && password == 'UserPassword') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => UserHomePage()),
-      );
+
+    final user = await _supabaseManager.authenticateUser(username, password);
+    if (user != null) {
+      if (user['usertype'] == 2) {  // Admin
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => AdminHomePage()),
+        );
+      } else if (user['usertype'] == 1) {  // User
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => UserHomePage()),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Incorrect username or password')),
@@ -64,17 +55,16 @@ class _SignInScreenState extends State<SignInScreen> {
         iconTheme: IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
-        // This will prevent overflow when the keyboard is displayed
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: 600, // This limits the width on larger screens
+            maxWidth: 600,
           ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                SizedBox(height: 80), // Provides spacing at the top
+                SizedBox(height: 80),
                 Text(
                   "Let's Get Started",
                   style: TextStyle(fontSize: 24, color: Colors.white),
@@ -108,31 +98,26 @@ class _SignInScreenState extends State<SignInScreen> {
                       borderSide: BorderSide(color: Colors.orange, width: 2.0),
                     ),
                     suffixIcon:
-                        const Icon(Icons.visibility_off, color: Colors.white70),
+                    const Icon(Icons.visibility_off, color: Colors.white70),
                   ),
                   style: TextStyle(color: Colors.white),
                 ),
                 SizedBox(height: 40),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Color(0xFF615793), // The background color of the button
-                    foregroundColor: Colors
-                        .white, // The color of the text (foreground color)
+                    backgroundColor: Color(0xFF615793),
+                    foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                          10), // The rounded corners of the button
-                      // side: BorderSide(
-                      //     color: Color(0xFFD6A642)), // Border color and width
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   onPressed: _attemptSignIn,
                   child: Text(
                     'Sign In',
                     style: TextStyle(
-                      fontSize: 18, // The font size
-                      fontWeight: FontWeight.bold, // The font weight
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -141,22 +126,17 @@ class _SignInScreenState extends State<SignInScreen> {
                 SizedBox(height: 20),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Color(0xFF615793), // The background color of the button
-                    foregroundColor: Colors
-                        .white, // The color of the text (foreground color)
+                    backgroundColor: Color(0xFF615793),
+                    foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                          10), // The rounded corners of the button
-                      // side: BorderSide(
-                      //     color: Color(0xFFD6A642)), // Border color and width
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   onPressed: _signInWithBarcode,
                   child: const Text('Scan Barcode'),
                 ),
-                SizedBox(height: 80), // Provides spacing at the bottom
+                SizedBox(height: 80),
               ],
             ),
           ),

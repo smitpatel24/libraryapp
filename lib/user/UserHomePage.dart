@@ -6,8 +6,12 @@ import 'ReaderDetailsPage.dart';
 import '../InventoryPage.dart';
 import '../OverduePage.dart';
 import 'screens/return_screen.dart';
+import '../services/supabase_manager.dart';
+import '../SignInScreen.dart';
 
 class UserHomePage extends StatelessWidget {
+  final SupabaseManager _supabaseManager = SupabaseManager();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -15,13 +19,20 @@ class UserHomePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
         title: Text('Library Name', style: TextStyle(color: Colors.white)),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout, color: Colors.white),
+            onPressed: () async {
+              await _supabaseManager.logout();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => SignInScreen()),
+                    (route) => false,
+              );
+            },
+          ),
+        ],
       ),
       body: GridView.count(
         crossAxisCount: 2,
@@ -79,7 +90,6 @@ class UserHomePage extends StatelessWidget {
             icon: Icons.shopping_basket,
             label: 'Checkout',
             onTap: () {
-              // Navigate to Checkout screen or handle the button tap
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const CheckoutScreen()),
@@ -91,7 +101,6 @@ class UserHomePage extends StatelessWidget {
             icon: Icons.refresh,
             label: 'Return',
             onTap: () {
-              // Navigate to Return screen or handle the button tap
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ReturnScreen()),
@@ -105,8 +114,8 @@ class UserHomePage extends StatelessWidget {
 
   Widget _buildGridButton(BuildContext context,
       {required IconData icon,
-      required String label,
-      required VoidCallback onTap}) {
+        required String label,
+        required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Container(

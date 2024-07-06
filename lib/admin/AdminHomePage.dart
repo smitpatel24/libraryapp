@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
-//import 'package:libraryapp/admin/BookDetailsPage.dart';
 import 'AddUserPage.dart';
 import 'UserDetailsPage.dart';
 import 'AddBookPage.dart';
 import 'package:libraryapp/InventoryPage.dart';
 import 'package:libraryapp/OverduePage.dart';
 import 'BookDetailsPage.dart';
+import '../services/supabase_manager.dart';
+import '../SignInScreen.dart';
 
 class AdminHomePage extends StatelessWidget {
+  final SupabaseManager _supabaseManager = SupabaseManager();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -15,13 +18,20 @@ class AdminHomePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
         title: Text('Library Name', style: TextStyle(color: Colors.white)),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout, color: Colors.white),
+            onPressed: () async {
+              await _supabaseManager.logout();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => SignInScreen()),
+                    (route) => false,
+              );
+            },
+          ),
+        ],
       ),
       body: GridView.count(
         crossAxisCount: 2,
@@ -103,8 +113,8 @@ class AdminHomePage extends StatelessWidget {
 
   Widget _buildGridButton(BuildContext context,
       {required IconData icon,
-      required String label,
-      required VoidCallback onTap}) {
+        required String label,
+        required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Container(
