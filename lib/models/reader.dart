@@ -2,11 +2,13 @@ class Reader {
   final String firstname;
   final String lastname;
   final String barcode;
+  final String id;
 
   Reader({
     required this.firstname,
     required this.lastname,
     required this.barcode,
+    required this.id,
   });
 
   factory Reader.fromSupabase(Map<String, dynamic> json) {
@@ -14,6 +16,7 @@ class Reader {
       firstname: json['fname'] as String,
       lastname: json['lname'] as String,
       barcode: json['barcode'] as String,
+      id: json['id'] as String,
     );
   }
 
@@ -22,6 +25,7 @@ class Reader {
       'firstname': firstname,
       'lastname': lastname,
       'barcode': barcode,
+      'id': id,
     };
   }
 }

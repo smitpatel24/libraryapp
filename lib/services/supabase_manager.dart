@@ -214,6 +214,7 @@ class SupabaseManager {
     required String password,
     required String barcode,
   }) async {
+    log('Creating user: $firstName $lastName');
     try {
       // Hash the password before storing it in the database
       final passwordHash = _hashPassword(password);

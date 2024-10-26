@@ -31,7 +31,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       });
 
       final fetchedReaders = await _supabaseManager.fetchAllReaders();
-      
+
       setState(() {
         readers = fetchedReaders;
         isLoading = false;
@@ -44,16 +44,12 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
     }
   }
 
-  void navigateToEditUserPage(BuildContext context, Reader reader) {
+  void navigateToEditUserPage(BuildContext context, Reader user) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditUserPage(
-          userDetails: {
-            'firstname': reader.firstname,
-            'lastname': reader.lastname,
-            'barcode': reader.barcode,
-          },
+          user: user,
         ),
       ),
     );
@@ -177,7 +173,8 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
           color: Color(0xFF4A4A6A),
           margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 0.0),
           child: ListTile(
-            contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            contentPadding:
+                EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
             title: Text(
               '${reader.firstname} ${reader.lastname}',
               style: TextStyle(color: Colors.white, fontSize: 18),

@@ -1,40 +1,116 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:libraryapp/models/reader.dart';
+import 'package:libraryapp/services/supabase_manager.dart';
 
 class EditUserPage extends StatefulWidget {
-  final Map<String, String> userDetails;
+  final Reader user;
 
-  EditUserPage({Key? key, required this.userDetails}) : super(key: key);
+  const EditUserPage({super.key, required this.user});
 
   @override
   _EditUserPageState createState() => _EditUserPageState();
 }
 
 class _EditUserPageState extends State<EditUserPage> {
+  final SupabaseManager _supabaseManager = SupabaseManager.instance;
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
-  late final TextEditingController _detailsController;
+  late final TextEditingController _barcodeController;
+  bool _isLoading = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _firstNameController =
-        TextEditingController(text: widget.userDetails['firstName']);
-    _lastNameController =
-        TextEditingController(text: widget.userDetails['lastName']);
-    _detailsController =
-        TextEditingController(text: widget.userDetails['details']);
+    // Use Reader model properties
+    _firstNameController = TextEditingController(text: widget.user.firstname);
+    _lastNameController = TextEditingController(text: widget.user.lastname);
+    _barcodeController = TextEditingController(text: widget.user.barcode);
+    log('User details initialized: ${widget.user}');
   }
 
-  void _updateDetails() {
-    // Logic to update user details goes here
+  Future<void> _updateDetails() async {
+    if (!_validateInputs()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // TODO Update user details in Supabase
+      // await _supabaseManager.updateReader(
+      //   readerId: widget.user.id,
+      //   firstname: _firstNameController.text,
+      //   lastname: _lastNameController.text,
+      //   barcode: _barcodeController.text,
+      // );
+
+      if (mounted) {
+        _showSuccessMessage('User details updated successfully!');
+        Navigator.of(context).pop(); // Return to previous screen
+      }
+    } catch (error) {
+      setState(() => _error = error.toString());
+      _showErrorMessage('Error updating user: $error');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
-  void _updateBarcode() {
-    // Logic to scan and update the barcode goes here
+  bool _validateInputs() {
+    if (_firstNameController.text.isEmpty ||
+        _lastNameController.text.isEmpty ||
+        _barcodeController.text.isEmpty) {
+      _showErrorMessage('Please fill in all the fields');
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _scanBarcode() async {
+    try {
+      final barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+        '#615793', // Purple color for scan line
+        'Cancel',
+        true,
+        ScanMode.BARCODE,
+      );
+
+      if (!mounted) return;
+
+      if (barcodeScanRes != '-1') {
+        setState(() => _barcodeController.text = barcodeScanRes);
+        _showSuccessMessage('Barcode scanned: $barcodeScanRes');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showErrorMessage('Failed to scan barcode: ${e.toString()}');
+    }
   }
 
   void _deleteUser() {
     // Logic to delete user goes here
+  }
+
+  void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   @override
@@ -74,13 +150,13 @@ class _EditUserPageState extends State<EditUserPage> {
             ),
             SizedBox(height: 16),
             _buildTextField(
-              label: 'User ID',
-              controller: _detailsController,
-              isPassword: false, // Adjust based on your needs
+              label: 'User Barcode',
+              controller: _barcodeController,
+              isPassword: false,
             ),
             SizedBox(height: 24),
             GestureDetector(
-              onTap: _updateBarcode,
+              onTap: _scanBarcode,
               child: Container(
                 padding: EdgeInsets.symmetric(vertical: 15.0),
                 decoration: BoxDecoration(
@@ -164,7 +240,7 @@ class _EditUserPageState extends State<EditUserPage> {
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
-    _detailsController.dispose();
+    _barcodeController.dispose();
     super.dispose();
   }
 }
