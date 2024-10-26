@@ -12,7 +12,7 @@ class UserDetailsPage extends StatefulWidget {
 }
 
 class _UserDetailsPageState extends State<UserDetailsPage> {
-  final SupabaseManager _supabaseManager = SupabaseManager();
+  final SupabaseManager _supabaseManager = SupabaseManager.instance;
   List<Reader> readers = [];
   bool isLoading = true;
   String? error;

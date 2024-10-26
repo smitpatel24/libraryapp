@@ -1,16 +1,66 @@
 import 'dart:developer';
 
 import 'package:libraryapp/models/reader.dart';
-import 'package:supabase/supabase.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert'; // for utf8.encode
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseManager {
   static const String supabaseUrl = 'https://dravtxcouwimsuugpdbc.supabase.co';
   static const String supabaseKey =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyYXZ0eGNvdXdpbXN1dWdwZGJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQ4NDkyODEsImV4cCI6MjAzMDQyNTI4MX0.yKPZgxXOP7jHQSVpauh8suDZygE22JcFEnyLETMr990';
-  final SupabaseClient client = SupabaseClient(supabaseUrl, supabaseKey);
+
+  // Singleton instance
+  static final SupabaseManager _instance = SupabaseManager._internal();
+
+  // Client instance
+  late final SupabaseClient client;
+
+  // Initialization flag
+  bool _isInitialized = false;
+
+  // Private constructor
+  SupabaseManager._internal() {
+    _initializeClient();
+  }
+
+  // Factory constructor for backwards compatibility
+  @Deprecated("Use SupabaseManager.instance instead")
+  factory SupabaseManager() {
+    log('Warning: Use SupabaseManager.instance instead of constructor');
+    return _instance;
+  }
+
+  // Singleton accessor
+  static SupabaseManager get instance => _instance;
+
+  // Initialize the Supabase client
+  void _initializeClient() {
+    client = SupabaseClient(supabaseUrl, supabaseKey);
+  }
+
+  // Ensure initialization
+  Future<void> ensureInitialized() async {
+    if (!_isInitialized) {
+      try {
+        // Test connection
+        await client.from('users').select().limit(1);
+        _isInitialized = true;
+        log('SupabaseManager initialized successfully');
+      } catch (e) {
+        log('Failed to initialize SupabaseManager: $e');
+        rethrow;
+      }
+    }
+  }
+
+  // Clean up resources
+  void dispose() {
+    client.dispose();
+    _isInitialized = false;
+    log('SupabaseManager disposed');
+  }
 
   // Method to authenticate user and fetch user details
   Future<Map<String, dynamic>?> authenticateUser(
