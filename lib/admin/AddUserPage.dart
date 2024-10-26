@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:libraryapp/services/supabase_manager.dart';
 
 class AddUserPage extends StatefulWidget {
   @override
@@ -10,45 +12,123 @@ class _AddUserPageState extends State<AddUserPage> {
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  String? _scannedBarcode; // Store the scanned barcode
 
-  void _createAccount() {
-    if (_firstNameController.text.isNotEmpty &&
-        _lastNameController.text.isNotEmpty &&
-        _usernameController.text.isNotEmpty &&
-        _passwordController.text.isNotEmpty) {
-      // Use a dummy barcode for now
-      String dummyBarcode = "123456789012";
-      Map<String, String> newUser = {
-        'name': '${_firstNameController.text} ${_lastNameController.text}',
-        'details': '${_usernameController.text}($dummyBarcode)',
-      };
+  void _createAccount() async {
+    // 1. Validate input fields
+    if (_firstNameController.text.isEmpty ||
+        _lastNameController.text.isEmpty ||
+        _usernameController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please fill in all the fields')),
+        );
+      }
+      return;
+    }
 
-      // Pass the new user data back to the UserDetailsPage
-      Navigator.pop(context, newUser);
-    } else {
-      // Show an error message if any field is empty
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in all the fields')),
+    // 2. Check if a barcode has been scanned
+    if (_scannedBarcode == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please scan a barcode first')),
+        );
+      }
+      return;
+    }
+
+    // Show a loading indicator while the user is being created
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
+    }
+
+    try {
+      // Call the SupabaseManager to create a user
+      await SupabaseManager().createUserAsAReader(
+        firstName: _firstNameController.text,
+        lastName: _lastNameController.text,
+        username: _usernameController.text,
+        password: _passwordController.text,
+        barcode: _scannedBarcode!,
+      );
+
+      // On success, close the loading indicator
+      if (mounted) {
+        Navigator.of(context).pop(); // Close the loading dialog
+
+        // Clear the form
+        _firstNameController.clear();
+        _lastNameController.clear();
+        _usernameController.clear();
+        _passwordController.clear();
+        setState(() {
+          _scannedBarcode = null;
+        });
+
+        // Show success message using SnackBar
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('User created successfully! Form cleared for new entry.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        Navigator.of(context).pop(); // Close the loading dialog
+
+        // Show error message using SnackBar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating user: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  void _scanBarcode() {
-    // Barcode scanning logic goes here
-    // For now, let's use a dummy barcode value
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Dummy Barcode Scanned'),
-        content: Text('Barcode: 123456789012'),
-        actions: <Widget>[
-          TextButton(
-            child: Text('OK'),
-            onPressed: () => Navigator.of(context).pop(),
+  Future<void> _scanBarcode() async {
+    try {
+      final barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+        '#615793', // Using the same purple color as your theme
+        'Cancel',
+        true,
+        ScanMode.BARCODE,
+      );
+      if (!mounted) return;
+      // Only update if a barcode was successfully scanned
+      if (barcodeScanRes != '-1') {
+        setState(() {
+          _scannedBarcode = barcodeScanRes;
+        });
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Barcode scanned: $_scannedBarcode'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 1),
           ),
-        ],
-      ),
-    );
+        );
+      }
+    } catch (e) {
+      // Check if widget is still mounted before using BuildContext
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to scan barcode: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -94,17 +174,32 @@ class _AddUserPageState extends State<AddUserPage> {
             GestureDetector(
               onTap: _scanBarcode,
               child: Container(
-                padding: EdgeInsets.symmetric(vertical: 15.0),
+                padding: const EdgeInsets.symmetric(vertical: 15.0),
                 decoration: BoxDecoration(
                   color: Colors.white12,
                   borderRadius: BorderRadius.circular(10.0),
                 ),
                 child: Column(
                   children: [
-                    Icon(Icons.camera_alt, color: Colors.white54),
-                    SizedBox(height: 10),
-                    Text('Scan barcode below:',
-                        style: TextStyle(color: Colors.white70)),
+                    Icon(
+                      _scannedBarcode != null
+                          ? Icons.check_circle
+                          : Icons.camera_alt,
+                      color: _scannedBarcode != null
+                          ? Colors.green
+                          : Colors.white54,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _scannedBarcode != null
+                          ? 'Barcode: $_scannedBarcode'
+                          : 'Scan barcode',
+                      style: TextStyle(
+                        color: _scannedBarcode != null
+                            ? Colors.green
+                            : Colors.white70,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -164,6 +259,7 @@ class _AddUserPageState extends State<AddUserPage> {
     _lastNameController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
+    _scannedBarcode = null;
     super.dispose();
   }
 }
