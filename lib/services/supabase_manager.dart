@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:libraryapp/models/reader.dart';
 import 'package:supabase/supabase.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert'; // for utf8.encode
@@ -190,4 +191,15 @@ class SupabaseManager {
       throw Exception('Failed to create user: $e');
     }
   }
+
+  // Method to fetch all readers
+  Future<List<Reader>> fetchAllReaders() async {
+  try { 
+    final response = await client.from('readers').select();
+    final List data = response as List;
+    return data.map((user) => Reader.fromSupabase(user)).toList();
+  } catch (e) {
+    throw Exception('Failed to fetch readers: $e');
+  } 
+}
 }
