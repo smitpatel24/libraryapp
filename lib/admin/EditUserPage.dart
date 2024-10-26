@@ -39,12 +39,12 @@ class _EditUserPageState extends State<EditUserPage> {
 
     try {
       // TODO Update user details in Supabase
-      // await _supabaseManager.updateReader(
-      //   readerId: widget.user.id,
-      //   firstname: _firstNameController.text,
-      //   lastname: _lastNameController.text,
-      //   barcode: _barcodeController.text,
-      // );
+      await _supabaseManager.updateReader(
+        readerId: widget.user.id,
+        firstname: _firstNameController.text,
+        lastname: _lastNameController.text,
+        barcode: _barcodeController.text,
+      );
 
       if (mounted) {
         _showSuccessMessage('User details updated successfully!');

@@ -13,6 +13,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final SupabaseManager _supabaseManager = SupabaseManager();
+  bool _isPasswordVisible = false;
 
   void _attemptSignIn() async {
     final String username = _usernameController.text;
@@ -20,12 +21,14 @@ class _SignInScreenState extends State<SignInScreen> {
 
     final user = await _supabaseManager.authenticateUser(username, password);
     if (user != null) {
-      if (user['usertype'] == 2) {  // Admin
+      if (user['usertype'] == 2) {
+        // Admin
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => AdminHomePage()),
         );
-      } else if (user['usertype'] == 1) {  // User
+      } else if (user['usertype'] == 1) {
+        // User
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => UserHomePage()),
@@ -36,6 +39,12 @@ class _SignInScreenState extends State<SignInScreen> {
         SnackBar(content: Text('Incorrect username or password')),
       );
     }
+  }
+
+  void _togglePasswordVisibility() {
+    setState(() {
+      _isPasswordVisible = !_isPasswordVisible;
+    });
   }
 
   void _signInWithBarcode() {
@@ -87,7 +96,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 SizedBox(height: 20),
                 TextField(
                   controller: _passwordController,
-                  obscureText: true,
+                  obscureText: !_isPasswordVisible,  // Updated this line
                   decoration: InputDecoration(
                     hintText: 'Password',
                     hintStyle: TextStyle(color: Colors.white70),
@@ -97,8 +106,15 @@ class _SignInScreenState extends State<SignInScreen> {
                     focusedBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: Colors.orange, width: 2.0),
                     ),
-                    suffixIcon:
-                    const Icon(Icons.visibility_off, color: Colors.white70),
+                    suffixIcon: IconButton(  // Updated this section
+                      icon: Icon(
+                        _isPasswordVisible 
+                          ? Icons.visibility 
+                          : Icons.visibility_off,
+                        color: Colors.white70,
+                      ),
+                      onPressed: _togglePasswordVisibility,
+                    ),
                   ),
                   style: TextStyle(color: Colors.white),
                 ),
