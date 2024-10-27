@@ -38,7 +38,6 @@ class _EditUserPageState extends State<EditUserPage> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO Update user details in Supabase
       await _supabaseManager.updateReader(
         readerId: widget.user.id,
         firstname: _firstNameController.text,
@@ -91,8 +90,72 @@ class _EditUserPageState extends State<EditUserPage> {
     }
   }
 
-  void _deleteUser() {
-    // Logic to delete user goes here
+  Future<void> _deleteUser() async {
+    // Show confirmation dialog
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Color(0xFF32324D),
+          title: Text(
+            'Confirm Delete',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Text(
+            'Are you sure you want to delete this user? This action cannot be undone.',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                backgroundColor: Color(0xFF935757),
+              ),
+              child: Text(
+                'Delete',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If user cancels, return early
+    if (shouldDelete != true) return;
+
+    // Show loading state
+    setState(() => _isLoading = true);
+
+    try {
+      // Call delete API
+      await _supabaseManager.deleteReader(widget.user.id);
+
+      if (mounted) {
+        // Show success message
+        _showSuccessMessage('User deleted successfully');
+        // Pop twice to go back to the user list
+        Navigator.of(context)
+          ..pop() // Pop the current page
+          ..pop(); // Pop the previous page to refresh the list
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = error.toString());
+        _showErrorMessage('Error deleting user: $error');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _showSuccessMessage(String message) {
@@ -119,6 +182,7 @@ class _EditUserPageState extends State<EditUserPage> {
       backgroundColor: Color(0xFF32324D),
       appBar: AppBar(
         leading: BackButton(color: Colors.white),
+        title: Text('Edit User Details', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -130,13 +194,13 @@ class _EditUserPageState extends State<EditUserPage> {
           children: <Widget>[
             SizedBox(height: 20),
             Text(
-              'Edit User Details',
+              'Editing UserID: ${widget.user.id}',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 14,
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
-              textAlign: TextAlign.center,
+              textAlign: TextAlign.left,
             ),
             SizedBox(height: 24),
             _buildTextField(
@@ -191,18 +255,25 @@ class _EditUserPageState extends State<EditUserPage> {
             SizedBox(height: 16),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Color(0xFF935757), // Modify for a different color
+                backgroundColor: Color(0xFF935757),
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 16.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),
                 ),
               ),
-              onPressed: _deleteUser,
-              child: Text('Delete User'),
+              onPressed: _isLoading ? null : _deleteUser,
+              child: _isLoading
+                  ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text('Delete User'),
             ),
-            SizedBox(height: 80),
           ],
         ),
       ),

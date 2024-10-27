@@ -279,4 +279,17 @@ class SupabaseManager {
       throw Exception('Failed to update reader: $e');
     }
   }
+
+  // Method to delete a reader
+  Future<void> deleteReader(int readerId) async {
+    try {
+      log('Deleting reader with ID: $readerId');
+      final response = await client
+          .rpc('delete_reader', params: {'reader_id': readerId});
+
+      log('Delete response: ${response.data}');
+    } catch (e) {
+      throw Exception('Failed to delete reader: $e');
+    }
+  }
 }

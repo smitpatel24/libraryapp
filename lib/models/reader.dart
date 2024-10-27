@@ -15,7 +15,7 @@ class Reader {
     return Reader(
       firstname: json['firstname'] as String,
       lastname: json['lastname'] as String,
-      barcode: json['barcode'] as String,
+      barcode: json['barcode'] as String? ?? '',
       id: json['id'] as int,
     );
   }
