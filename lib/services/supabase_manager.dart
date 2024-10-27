@@ -219,15 +219,17 @@ class SupabaseManager {
       // Hash the password before storing it in the database
       final passwordHash = _hashPassword(password);
 
-      // Insert the new user into the 'users' table with usertype = 3 (reader)
-      final response = await client.from('users').insert({
-        'firstname': firstName,
-        'lastname': lastName,
-        'username': username,
-        'passwordhash': passwordHash, // Store the hashed password
-        'usertype': 3, // usertype 3 is for a reader
-        'barcode': barcode,
-      }).select(); // Use select() to return the inserted user
+      // call sql function to create user
+      final response = await client.rpc(
+        'create_reader',
+        params: {
+          'first_name': firstName,
+          'last_name': lastName,
+          'user_name': username,
+          'password_hash': passwordHash,
+          'reader_barcode': barcode,
+        },
+      );
 
       // Handle the response if needed
       if (response.isNotEmpty) {
@@ -246,7 +248,7 @@ class SupabaseManager {
   // Method to fetch all readers
   Future<List<Reader>> fetchAllReaders() async {
     try {
-      final response = await client.from('readerinfo').select();
+      final response = await client.rpc('get_readers');
       final List data = response as List;
       return data.map((user) => Reader.fromSupabase(user)).toList();
     } catch (e) {
@@ -262,14 +264,17 @@ class SupabaseManager {
     required String barcode,
   }) async {
     try {
-      await client
-          .from('readerinfo')
-          .update({
-            'firstname': firstname,
-            'lastname': lastname,
-            'barcode': barcode,
-          })
-          .eq('id', readerId);
+      final response = await client.rpc(
+        'update_reader',
+        params: {
+          'reader_id': readerId,
+          'first_name': firstname,
+          'last_name': lastname,
+          'reader_barcode': barcode,
+        },
+      );
+
+      log('Reader updated: $response');
     } catch (e) {
       throw Exception('Failed to update reader: $e');
     }
