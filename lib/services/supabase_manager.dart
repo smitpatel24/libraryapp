@@ -231,14 +231,8 @@ class SupabaseManager {
         },
       );
 
-      // Handle the response if needed
-      if (response.isNotEmpty) {
-        // User created successfully
-        log('User created: ${response[0]}');
-      } else {
-        // Handle the case where the user was not created
-        log('User creation failed.');
-      }
+      
+      log('User created: $response');
     } catch (e) {
       // Log the error or throw it to be caught by the calling method
       throw Exception('Failed to create user: $e');
