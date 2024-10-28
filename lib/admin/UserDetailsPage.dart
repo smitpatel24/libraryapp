@@ -1,26 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:libraryapp/models/reader.dart';
+import 'package:libraryapp/services/supabase_manager.dart';
 import 'EditUserPage.dart';
 import 'AddUserPage.dart';
 
 class UserDetailsPage extends StatefulWidget {
+  const UserDetailsPage({super.key});
+
   @override
   _UserDetailsPageState createState() => _UserDetailsPageState();
 }
 
 class _UserDetailsPageState extends State<UserDetailsPage> {
-  List<Map<String, String>> users = [
-    {'name': 'Ariel Meadows', 'details': '502804(CODE_071)'},
-    {'name': 'Wayne Solomon', 'details': '332094(CODE_805)'},
-    {'name': 'Mylah Martin', 'details': '263602(CODE_541)'},
-    {'name': 'Mateo Crane', 'details': '634421(CODE_025)'},
-  ];
+  final SupabaseManager _supabaseManager = SupabaseManager.instance;
+  List<Reader> readers = [];
+  bool isLoading = true;
+  String? error;
 
-  void navigateToEditUserPage(
-      BuildContext context, Map<String, String> userDetails) {
+  @override
+  void initState() {
+    super.initState();
+    loadReaders();
+  }
+
+  Future<void> loadReaders() async {
+    try {
+      setState(() {
+        isLoading = true;
+        error = null;
+      });
+
+      final fetchedReaders = await _supabaseManager.fetchAllReaders();
+
+      setState(() {
+        readers = fetchedReaders;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        error = 'Failed to load readers: ${e.toString()}';
+        isLoading = false;
+      });
+    }
+  }
+
+  void navigateToEditUserPage(BuildContext context, Reader user) {
     Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) => EditUserPage(userDetails: userDetails)),
+        builder: (context) => EditUserPage(
+          user: user,
+        ),
+      ),
     );
   }
 
@@ -31,9 +62,18 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
     );
 
     if (result != null) {
-      setState(() {
-        users.add(result);
-      });
+      // Refresh the list after adding a new user
+      loadReaders();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User added successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     }
   }
 
@@ -48,61 +88,109 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
           icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
+        title: const Text(
+          'User Details',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.add, color: Colors.white),
-            onPressed: navigateToAddUserPage,
+            icon: Icon(Icons.refresh, color: Colors.white),
+            onPressed: loadReaders,
+            tooltip: 'Refresh',
           ),
         ],
       ),
       backgroundColor: Color(0xFF32324D),
       body: Padding(
-        padding: const EdgeInsets.only(top: 16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                'User Details',
-                style: TextStyle(
-                    fontSize: 24,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold),
-              ),
-            ),
-            SizedBox(height: 24),
+            SizedBox(height: 10),
             Expanded(
-              child: ListView.builder(
-                itemCount: users.length,
-                itemBuilder: (BuildContext context, int index) {
-                  Map<String, String> user = users[index];
-                  return Card(
-                    color: Color(0xFF4A4A6A),
-                    margin:
-                        EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                    child: ListTile(
-                      contentPadding:
-                          EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                      title: Text(
-                        user['name']!,
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      ),
-                      subtitle: Text(
-                        user['details']!,
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
-                      trailing: IconButton(
-                        icon: Icon(Icons.edit, color: Colors.white),
-                        onPressed: () => navigateToEditUserPage(context, user),
-                      ),
-                    ),
-                  );
-                },
-              ),
+              child: _buildContent(),
             ),
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: navigateToAddUserPage,
+        backgroundColor: Color(0xFF615793),
+        child: Icon(Icons.add),
+        tooltip: 'Add New User',
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    if (isLoading) {
+      return Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        ),
+      );
+    }
+
+    if (error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              error!,
+              style: TextStyle(color: Colors.red[300], fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: loadReaders,
+              child: Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (readers.isEmpty) {
+      return Center(
+        child: Text(
+          'No users available. Add users by clicking the "+" button above.',
+          style: TextStyle(color: Colors.white60, fontSize: 18),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: readers.length,
+      itemBuilder: (BuildContext context, int index) {
+        final reader = readers[index];
+        return Card(
+          color: Color(0xFF4A4A6A),
+          margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 0.0),
+          child: ListTile(
+            contentPadding:
+                EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            title: Text(
+              '${reader.firstname} ${reader.lastname}',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
+            subtitle: Text(
+              'Barcode: ${reader.barcode}',
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+            trailing: IconButton(
+              icon: Icon(Icons.edit, color: Colors.white),
+              onPressed: () => navigateToEditUserPage(context, reader),
+              tooltip: 'Edit User',
+            ),
+          ),
+        );
+      },
     );
   }
 }

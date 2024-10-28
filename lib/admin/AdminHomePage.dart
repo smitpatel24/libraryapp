@@ -53,7 +53,7 @@ class AdminHomePage extends StatelessWidget {
           ),
           _buildGridButton(
             context,
-            icon: Icons.details,
+            icon: Icons.supervised_user_circle_sharp,
             label: 'User Details',
             onTap: () {
               Navigator.push(

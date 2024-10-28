@@ -1,4 +1,7 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:libraryapp/services/supabase_manager.dart';
 
 class AddUserPage extends StatefulWidget {
   @override
@@ -6,49 +9,114 @@ class AddUserPage extends StatefulWidget {
 }
 
 class _AddUserPageState extends State<AddUserPage> {
+  // Use singleton instance
+  final SupabaseManager _supabaseManager = SupabaseManager.instance;
+  
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  String? _scannedBarcode;
+  bool _isPasswordVisible = false;  // Add state for password visibility
 
-  void _createAccount() {
-    if (_firstNameController.text.isNotEmpty &&
-        _lastNameController.text.isNotEmpty &&
-        _usernameController.text.isNotEmpty &&
-        _passwordController.text.isNotEmpty) {
-      // Use a dummy barcode for now
-      String dummyBarcode = "123456789012";
-      Map<String, String> newUser = {
-        'name': '${_firstNameController.text} ${_lastNameController.text}',
-        'details': '${_usernameController.text}($dummyBarcode)',
-      };
+  void _createAccount() async {
+    if (!_validateInputs()) return;
 
-      // Pass the new user data back to the UserDetailsPage
-      Navigator.pop(context, newUser);
-    } else {
-      // Show an error message if any field is empty
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in all the fields')),
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
+    }
+
+    try {
+      log('Calling createUserAsAReader...');
+      await _supabaseManager.createUserAsAReader(
+        firstName: _firstNameController.text,
+        lastName: _lastNameController.text,
+        username: _usernameController.text,
+        password: _passwordController.text,
+        barcode: _scannedBarcode!,
+      );
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        _clearForm();
+        _showSuccessMessage('User created successfully! Form cleared for new entry.');
+      }
+    } catch (error) {
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        _showErrorMessage('Error creating user: $error');
+      }
     }
   }
 
-  void _scanBarcode() {
-    // Barcode scanning logic goes here
-    // For now, let's use a dummy barcode value
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Dummy Barcode Scanned'),
-        content: Text('Barcode: 123456789012'),
-        actions: <Widget>[
-          TextButton(
-            child: Text('OK'),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
+  bool _validateInputs() {
+    if (_firstNameController.text.isEmpty ||
+        _lastNameController.text.isEmpty ||
+        _usernameController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
+      _showErrorMessage('Please fill in all the fields');
+      return false;
+    }
+
+    if (_scannedBarcode == null) {
+      _showErrorMessage('Please scan a barcode first');
+      return false;
+    }
+
+    return true;
+  }
+
+  void _clearForm() {
+    _firstNameController.clear();
+    _lastNameController.clear();
+    _usernameController.clear();
+    _passwordController.clear();
+    setState(() {
+      _scannedBarcode = null;
+    });
+  }
+
+  void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
       ),
     );
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  Future<void> _scanBarcode() async {
+    try {
+      final barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+        '#615793',
+        'Cancel',
+        true,
+        ScanMode.BARCODE,
+      );
+      
+      if (!mounted) return;
+      
+      if (barcodeScanRes != '-1') {
+        setState(() => _scannedBarcode = barcodeScanRes);
+        _showSuccessMessage('Barcode scanned: $barcodeScanRes');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showErrorMessage('Failed to scan barcode: ${e.toString()}');
+    }
   }
 
   @override
@@ -61,7 +129,6 @@ class _AddUserPageState extends State<AddUserPage> {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        // Ensures the input form is scrollable
         padding: EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -78,65 +145,61 @@ class _AddUserPageState extends State<AddUserPage> {
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 24),
-            _buildTextField(
-                label: 'First Name', controller: _firstNameController),
+            _buildTextField(label: 'First Name', controller: _firstNameController),
             SizedBox(height: 16),
-            _buildTextField(
-                label: 'Last Name', controller: _lastNameController),
+            _buildTextField(label: 'Last Name', controller: _lastNameController),
             SizedBox(height: 16),
             _buildTextField(label: 'Username', controller: _usernameController),
             SizedBox(height: 16),
-            _buildTextField(
-                label: 'Password',
-                controller: _passwordController,
-                isPassword: true),
+            _buildPasswordField(),
             SizedBox(height: 24),
-            GestureDetector(
-              onTap: _scanBarcode,
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 15.0),
-                decoration: BoxDecoration(
-                  color: Colors.white12,
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: Column(
-                  children: [
-                    Icon(Icons.camera_alt, color: Colors.white54),
-                    SizedBox(height: 10),
-                    Text('Scan barcode below:',
-                        style: TextStyle(color: Colors.white70)),
-                  ],
-                ),
-              ),
-            ),
+            _buildBarcodeScanner(),
             SizedBox(height: 24),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF615793),
-                padding: EdgeInsets.symmetric(vertical: 16.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-              onPressed: _createAccount,
-              child: Text('Create Account',
-                  style: TextStyle(fontSize: 18, color: Colors.white)),
-            ),
-            SizedBox(height: 80), // Adjust spacing as needed
+            _buildCreateAccountButton(),
+            SizedBox(height: 80),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildPasswordField() {
+    return TextField(
+      controller: _passwordController,
+      obscureText: !_isPasswordVisible,
+      decoration: InputDecoration(
+        labelText: 'Password',
+        labelStyle: TextStyle(color: Colors.white70),
+        filled: true,
+        fillColor: Colors.white24,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: BorderSide(color: Colors.orange, width: 1.5),
+        ),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+            color: Colors.white70,
+          ),
+          onPressed: () {
+            setState(() => _isPasswordVisible = !_isPasswordVisible);
+          },
+        ),
+      ),
+      style: TextStyle(color: Colors.white70),
+    );
+  }
+
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
-    bool isPassword = false,
   }) {
     return TextField(
       controller: controller,
-      obscureText: isPassword,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Colors.white70),
@@ -150,11 +213,51 @@ class _AddUserPageState extends State<AddUserPage> {
           borderRadius: BorderRadius.circular(10.0),
           borderSide: BorderSide(color: Colors.orange, width: 1.5),
         ),
-        suffixIcon: isPassword
-            ? Icon(Icons.visibility_off, color: Colors.white70)
-            : null,
       ),
       style: TextStyle(color: Colors.white70),
+    );
+  }
+
+  Widget _buildBarcodeScanner() {
+    return GestureDetector(
+      onTap: _scanBarcode,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 15.0),
+        decoration: BoxDecoration(
+          color: Colors.white12,
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              _scannedBarcode != null ? Icons.check_circle : Icons.camera_alt,
+              color: _scannedBarcode != null ? Colors.green : Colors.white54,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _scannedBarcode != null ? 'Barcode: $_scannedBarcode' : 'Scan barcode',
+              style: TextStyle(
+                color: _scannedBarcode != null ? Colors.green : Colors.white70,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCreateAccountButton() {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Color(0xFF615793),
+        padding: EdgeInsets.symmetric(vertical: 16.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+      ),
+      onPressed: _createAccount,
+      child: Text('Create Account',
+          style: TextStyle(fontSize: 18, color: Colors.white)),
     );
   }
 
