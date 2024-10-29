@@ -9,6 +9,7 @@ import 'user/UserHomePage.dart';
 import 'package:libraryapp/services/supabase_manager.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   ConnectivityService(); 
   runApp(const MyApp());
 }
