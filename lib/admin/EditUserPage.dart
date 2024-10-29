@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:libraryapp/models/reader.dart';
+import 'package:libraryapp/services/offline_enabled_supabase_manager.dart';
 import 'package:libraryapp/services/supabase_manager.dart';
 
 class EditUserPage extends StatefulWidget {
@@ -15,7 +16,8 @@ class EditUserPage extends StatefulWidget {
 }
 
 class _EditUserPageState extends State<EditUserPage> {
-  final SupabaseManager _supabaseManager = SupabaseManager.instance;
+  final OfflineEnabledSupabaseManager _offlineEnabledManager = OfflineEnabledSupabaseManager();
+
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
   late final TextEditingController _barcodeController;
@@ -38,7 +40,7 @@ class _EditUserPageState extends State<EditUserPage> {
     setState(() => _isLoading = true);
 
     try {
-      await _supabaseManager.updateReader(
+      await _offlineEnabledManager.updateReader(
         readerId: widget.user.id,
         firstname: _firstNameController.text,
         lastname: _lastNameController.text,
@@ -136,7 +138,7 @@ class _EditUserPageState extends State<EditUserPage> {
 
     try {
       // Call delete API
-      await _supabaseManager.deleteReader(widget.user.id);
+      await _offlineEnabledManager.deleteReader(widget.user.id);
 
       if (mounted) {
         // Show success message

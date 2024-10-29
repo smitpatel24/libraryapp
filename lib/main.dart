@@ -1,13 +1,16 @@
+import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:libraryapp/services/connectivity_service.dart';
 import 'SignInScreen.dart';
 import 'admin/AdminHomePage.dart';
 import 'user/UserHomePage.dart';
-import '../services/supabase_manager.dart';
+import 'package:libraryapp/services/supabase_manager.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  ConnectivityService(); 
   runApp(const MyApp());
 }
 
@@ -22,6 +25,8 @@ class MyApp extends StatelessWidget {
       splitScreenMode: true,
       child: GetMaterialApp(
         title: 'Sankofa Library App',
+        builder: BotToastInit(), // Initialize BotToast
+        navigatorObservers: [BotToastNavigatorObserver()], // Add BotToast observer
         theme: ThemeData(
           primarySwatch: Colors.blue,
           visualDensity: VisualDensity.adaptivePlatformDensity,
