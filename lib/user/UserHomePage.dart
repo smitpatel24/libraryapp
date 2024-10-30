@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:libraryapp/user/ReaderDetailsPage.dart';
+import 'package:libraryapp/admin/AddUserPage.dart';
+import 'package:libraryapp/admin/UserDetailsPage.dart';
 import 'package:libraryapp/user/screens/checkout_screen.dart';
-import 'AddReaderPage.dart';
-import 'ReaderDetailsPage.dart';
 import '../InventoryPage.dart';
 import '../OverduePage.dart';
 import 'screens/return_screen.dart';
@@ -48,18 +47,18 @@ class UserHomePage extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AddReaderPage()),
+                MaterialPageRoute(builder: (context) => AddUserPage()),
               );
             },
           ),
           _buildGridButton(
             context,
-            icon: Icons.details,
+            icon: Icons.supervised_user_circle_sharp,
             label: 'Reader Details',
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => ReaderDetailsPage()),
+                MaterialPageRoute(builder: (context) => UserDetailsPage()),
               );
             },
           ),

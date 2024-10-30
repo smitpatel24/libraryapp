@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:libraryapp/services/user_type_service.dart';
 import 'package:libraryapp/services/offline_enabled_supabase_manager.dart';
 
 class AddUserPage extends StatefulWidget {
@@ -24,6 +25,20 @@ class _AddUserPageState extends State<AddUserPage> {
   String? _scannedBarcode;
   bool _isPasswordVisible = false; // Add state for password visibility
   UserRole _selectedRole = UserRole.reader;
+  bool _isAdmin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUserType();
+  }
+
+  Future<void> _checkUserType() async {
+    bool isAdmin = await UserTypeService.isAdmin();
+    setState(() {
+      _isAdmin = isAdmin;
+    });
+  }
 
   void _createAccount() async {
     if (!_validateInputs()) return;
@@ -295,17 +310,18 @@ class _AddUserPageState extends State<AddUserPage> {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 8.0),
       child: SegmentedButton<UserRole>(
-        segments: const [
+        segments: [
           ButtonSegment<UserRole>(
             value: UserRole.reader,
             label: Text('Reader'),
             icon: Icon(Icons.person_outline),
           ),
-          ButtonSegment<UserRole>(
-            value: UserRole.librarian,
-            label: Text('Librarian'),
-            icon: Icon(Icons.admin_panel_settings),
-          ),
+          if (_isAdmin)
+            ButtonSegment<UserRole>(
+              value: UserRole.librarian,
+              label: Text('Librarian'),
+              icon: Icon(Icons.admin_panel_settings),
+            ),
         ],
         selected: {_selectedRole},
         onSelectionChanged: (Set<UserRole> newSelection) {
