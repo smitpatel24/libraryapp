@@ -211,14 +211,10 @@ class SupabaseManager {
     required String firstName,
     required String lastName,
     required String username,
-    required String password,
     required String barcode,
   }) async {
-    log('Creating user: $firstName $lastName');
+    log('Creating reader: $firstName $lastName');
     try {
-      // Hash the password before storing it in the database
-      final passwordHash = _hashPassword(password);
-
       // call sql function to create user
       final response = await client.rpc(
         'create_reader',
@@ -226,16 +222,47 @@ class SupabaseManager {
           'first_name': firstName,
           'last_name': lastName,
           'user_name': username,
-          'password_hash': passwordHash,
+          'password_hash':'', // Password is not required for readers
           'reader_barcode': barcode,
         },
       );
 
-      
-      log('User created: $response');
+      log('Reader created: $response');
     } catch (e) {
       // Log the error or throw it to be caught by the calling method
-      throw Exception('Failed to create user: $e');
+      throw Exception('Failed to create reader: $e');
+    }
+  }
+
+  // Method to create a new user as a librarain
+  Future<void> createUserAsALibrarian({
+    required String firstName,
+    required String lastName,
+    required String username,
+    required String password,
+    required String barcode,
+  }) async {
+    log('Creating Reader: $firstName $lastName');
+    try {
+      // Hash the password before storing it in the database
+      final passwordHash = _hashPassword(password);
+
+      // call sql function to create user
+      final response = await client.rpc(
+        'create_librarian',
+        params: {
+          'first_name': firstName,
+          'last_name': lastName,
+          'user_name': username,
+          'password_hash': passwordHash,
+          'barcode': barcode,
+        },
+      );
+
+      log('Librarian created: $response');
+    } catch (e) {
+      // Log the error or throw it to be caught by the calling method
+      throw Exception('Failed to create Librarian: $e');
     }
   }
 
@@ -278,8 +305,8 @@ class SupabaseManager {
   Future<void> deleteReader(int readerId) async {
     try {
       log('Deleting reader with ID: $readerId');
-      final response = await client
-          .rpc('delete_reader', params: {'reader_id': readerId});
+      final response =
+          await client.rpc('delete_reader', params: {'reader_id': readerId});
 
       log('Delete response: ${response.data}');
     } catch (e) {

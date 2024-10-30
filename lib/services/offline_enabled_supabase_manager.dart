@@ -70,10 +70,20 @@ class OfflineEnabledSupabaseManager {
           firstName: operation.params['first_name'],
           lastName: operation.params['last_name'],
           username: operation.params['username'],
+          barcode: operation.params['barcode'],
+        );
+        break;
+      
+      case 'createUserAsALibrarian':
+        await _supabaseManager.createUserAsALibrarian(
+          firstName: operation.params['first_name'],
+          lastName: operation.params['last_name'],
+          username: operation.params['username'],
           password: operation.params['password'],
           barcode: operation.params['barcode'],
         );
         break;
+
 
       case 'updateReader':
         await _supabaseManager.updateReader(
@@ -90,20 +100,10 @@ class OfflineEnabledSupabaseManager {
     }
   }
 
-  // Future<Map<String, dynamic>?> authenticateUser(String username, String password) async {
-  //   if (_isConnected) {
-  //     return await _supabaseManager.authenticateUser(username, password);
-  //   } else {
-  //     await _queueOperation('authenticateUser', {'username': username, 'password': password});
-  //     return null;
-  //   }
-  // }
-
   Future<void> createUserAsAReader({
     required String firstName,
     required String lastName,
     required String username,
-    required String password,
     required String barcode,
   }) async {
     final isCurrentlyConnected = await _connectivityService.checkConnectivity();
@@ -114,13 +114,43 @@ class OfflineEnabledSupabaseManager {
         firstName: firstName,
         lastName: lastName,
         username: username,
-        password: password,
         barcode: barcode,
       );
       return;
     } else {
       log('Creating user: $firstName $lastName, queuing operation');
       await _queueOperation('createUserAsAReader', {
+        'first_name': firstName,
+        'last_name': lastName,
+        'username': username,
+        'barcode': barcode,
+      });
+      return;
+    }
+  }
+
+  Future<void> createUserAsALibrarian({
+    required String firstName,
+    required String lastName,
+    required String username,
+    required String password,
+    required String barcode,
+  }) async {
+    final isCurrentlyConnected = await _connectivityService.checkConnectivity();
+    log('Creating user: $firstName $lastName');
+    if (isCurrentlyConnected) {
+      log('Creating user: $firstName $lastName, using Supabase');
+      await _supabaseManager.createUserAsALibrarian(
+        firstName: firstName,
+        lastName: lastName,
+        username: username,
+        password: password,
+        barcode: barcode,
+      );
+      return;
+    } else {
+      log('Creating user: $firstName $lastName, queuing operation');
+      await _queueOperation('createUserAsALibrarian', {
         'first_name': firstName,
         'last_name': lastName,
         'username': username,
