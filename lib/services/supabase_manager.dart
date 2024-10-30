@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:libraryapp/models/reader.dart';
+import 'package:libraryapp/models/user_dto.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert'; // for utf8.encode
 import 'package:shared_preferences/shared_preferences.dart';
@@ -71,7 +71,7 @@ class SupabaseManager {
     final user = response;
     final passwordHash = _hashPassword(password);
     if (passwordHash == user['passwordhash']) {
-      await _setLoginState(true, user['usertype']);
+      await _setLoginState(true, user['usertype'], user['userid']);
       return user;
     }
 
@@ -86,10 +86,11 @@ class SupabaseManager {
   }
 
   // Method to set login state in SharedPreferences
-  Future<void> _setLoginState(bool loggedIn, int userType) async {
+  Future<void> _setLoginState(bool loggedIn, int userType, int userId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('loggedIn', loggedIn);
     await prefs.setInt('userType', userType);
+    await prefs.setInt('userId', userId);
   }
 
   // Method to get login state from SharedPreferences
@@ -104,11 +105,18 @@ class SupabaseManager {
     return prefs.getInt('userType');
   }
 
+  // Method to get user type from SharedPreferences
+  Future<int?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('userId');
+  }
+
   // Method to log out user
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('loggedIn');
     await prefs.remove('userType');
+    await prefs.remove('userId');
   }
 
   // Method to find or add an author and return the authorId
@@ -222,7 +230,7 @@ class SupabaseManager {
           'first_name': firstName,
           'last_name': lastName,
           'user_name': username,
-          'password_hash':'', // Password is not required for readers
+          'password_hash': '', // Password is not required for readers
           'reader_barcode': barcode,
         },
       );
@@ -267,11 +275,22 @@ class SupabaseManager {
   }
 
   // Method to fetch all readers
-  Future<List<Reader>> fetchAllReaders() async {
+  Future<List<UserDTO>> fetchAllReaders() async {
     try {
       final response = await client.rpc('get_readers');
       final List data = response as List;
-      return data.map((user) => Reader.fromSupabase(user)).toList();
+      return data.map((user) => UserDTO.fromSupabase(user)).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch readers: $e');
+    }
+  }
+
+  // Method to fetch all librarians
+  Future<List<UserDTO>> fetchAllLibrarians() async {
+    try {
+      final response = await client.from('librarianinfo').select();
+      final List data = response as List;
+      return data.map((user) => UserDTO.fromSupabase(user)).toList();
     } catch (e) {
       throw Exception('Failed to fetch readers: $e');
     }

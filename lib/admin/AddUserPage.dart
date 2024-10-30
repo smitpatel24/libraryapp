@@ -9,11 +9,6 @@ class AddUserPage extends StatefulWidget {
   _AddUserPageState createState() => _AddUserPageState();
 }
 
-enum UserRole {
-  reader,
-  librarian,
-}
-
 class _AddUserPageState extends State<AddUserPage> {
   // Use singleton instance
   final OfflineEnabledSupabaseManager _offlineEnabledManager = OfflineEnabledSupabaseManager();

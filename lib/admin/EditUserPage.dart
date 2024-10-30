@@ -2,21 +2,28 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
-import 'package:libraryapp/models/reader.dart';
+import 'package:libraryapp/models/user_dto.dart';
 import 'package:libraryapp/services/offline_enabled_supabase_manager.dart';
 import 'package:libraryapp/services/supabase_manager.dart';
 
 class EditUserPage extends StatefulWidget {
-  final Reader user;
+  final UserDTO user;
+  final bool isLibrarian;
+  final bool isSelf;
 
-  const EditUserPage({super.key, required this.user});
+  const EditUserPage(
+      {super.key,
+      required this.user,
+      this.isLibrarian = false,
+      this.isSelf = false});
 
   @override
   _EditUserPageState createState() => _EditUserPageState();
 }
 
 class _EditUserPageState extends State<EditUserPage> {
-  final OfflineEnabledSupabaseManager _offlineEnabledManager = OfflineEnabledSupabaseManager();
+  final OfflineEnabledSupabaseManager _offlineEnabledManager =
+      OfflineEnabledSupabaseManager();
 
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;

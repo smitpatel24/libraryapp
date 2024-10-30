@@ -19,4 +19,15 @@ class UserTypeService {
     final userType = await getUserType();
     return userType == ADMIN_TYPE;
   }
+
+  static Future<int> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('userId') ?? -1;
+  }
+}
+
+enum UserRole {
+  reader,
+  librarian,
+  admin,
 }

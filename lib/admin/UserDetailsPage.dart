@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:libraryapp/models/reader.dart';
+import 'package:libraryapp/models/user_dto.dart';
 import 'package:libraryapp/services/supabase_manager.dart';
+import 'package:libraryapp/services/user_type_service.dart';
 import 'EditUserPage.dart';
 import 'AddUserPage.dart';
 
@@ -13,43 +14,91 @@ class UserDetailsPage extends StatefulWidget {
 
 class _UserDetailsPageState extends State<UserDetailsPage> {
   final SupabaseManager _supabaseManager = SupabaseManager.instance;
-  List<Reader> readers = [];
-  bool isLoading = true;
-  String? error;
+  List<UserDTO> readers = [];
+  List<UserDTO> librarians = [];
+  bool isReadersLoading = true;
+  String? readersLoadingError;
+
+  bool isLibrariansLoading = true;
+  String? librariansLoadingError;
+
+  UserRole _selectedRole = UserRole.reader;
+  bool _isAdmin = false;
+
+  int _currentUserId = -1;
 
   @override
   void initState() {
     super.initState();
-    loadReaders();
+    _checkUserType();
+    loadData();
+  }
+
+  Future<void> _checkUserType() async {
+    bool isAdmin = await UserTypeService.isAdmin();
+    int userId = await UserTypeService.getUserId();
+    setState(() {
+      _isAdmin = isAdmin;
+      _currentUserId = userId;
+    });
+  }
+
+  Future<void> loadData() async {
+    await loadReaders();
+    await loadLibrarians();
   }
 
   Future<void> loadReaders() async {
     try {
       setState(() {
-        isLoading = true;
-        error = null;
+        isReadersLoading = true;
+        readersLoadingError = null;
       });
 
       final fetchedReaders = await _supabaseManager.fetchAllReaders();
 
       setState(() {
         readers = fetchedReaders;
-        isLoading = false;
+        isReadersLoading = false;
       });
     } catch (e) {
       setState(() {
-        error = 'Failed to load readers: ${e.toString()}';
-        isLoading = false;
+        readersLoadingError = 'Failed to load readers: ${e.toString()}';
+        isReadersLoading = false;
       });
     }
   }
 
-  void navigateToEditUserPage(BuildContext context, Reader user) {
+  Future<void> loadLibrarians() async {
+    try {
+      setState(() {
+        isLibrariansLoading = true;
+        librariansLoadingError = null;
+      });
+
+      final fetchedLibrarians = await _supabaseManager.fetchAllLibrarians();
+
+      setState(() {
+        librarians = fetchedLibrarians;
+        isLibrariansLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        librariansLoadingError = 'Failed to load librarians: ${e.toString()}';
+        isLibrariansLoading = false;
+      });
+    }
+  }
+
+  void navigateToEditUserPage(BuildContext context, UserDTO user,
+      [bool? isLibrarian, bool? isSelf]) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditUserPage(
           user: user,
+          isLibrarian: isLibrarian ?? false,
+          isSelf: isSelf ?? false,
         ),
       ),
     );
@@ -108,11 +157,15 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            _buildRoleSelector(),
             SizedBox(height: 10),
             Expanded(
-              child: _buildContent(),
+              child: _selectedRole == UserRole.reader
+                  ? _buildReadersList()
+                  : _buildLibrarianList(),
             ),
           ],
         ),
@@ -120,14 +173,50 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: navigateToAddUserPage,
         backgroundColor: Color(0xFF615793),
-        child: Icon(Icons.add),
         tooltip: 'Add New User',
+        child: Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildContent() {
-    if (isLoading) {
+  Widget _buildRoleSelector() {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8.0),
+      child: SegmentedButton<UserRole>(
+        segments: [
+          ButtonSegment<UserRole>(
+            value: UserRole.reader,
+            label: Text('Reader'),
+            icon: Icon(Icons.person_outline),
+          ),
+          ButtonSegment<UserRole>(
+            value: UserRole.librarian,
+            label: Text('Librarian'),
+            icon: Icon(Icons.admin_panel_settings),
+          ),
+        ],
+        selected: {_selectedRole},
+        onSelectionChanged: (Set<UserRole> newSelection) {
+          setState(() {
+            _selectedRole = newSelection.first;
+          });
+        },
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith<Color>(
+            (Set<WidgetState> states) {
+              if (states.contains(WidgetState.selected)) {
+                return Colors.green;
+              }
+              return Colors.white24;
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadersList() {
+    if (isReadersLoading) {
       return Center(
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -135,13 +224,13 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       );
     }
 
-    if (error != null) {
+    if (readersLoadingError != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              error!,
+              readersLoadingError!,
               style: TextStyle(color: Colors.red[300], fontSize: 16),
               textAlign: TextAlign.center,
             ),
@@ -186,6 +275,75 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
             trailing: IconButton(
               icon: Icon(Icons.edit, color: Colors.white),
               onPressed: () => navigateToEditUserPage(context, reader),
+              tooltip: 'Edit User',
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLibrarianList() {
+    if (isLibrariansLoading) {
+      return Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        ),
+      );
+    }
+
+    if (librariansLoadingError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              librariansLoadingError!,
+              style: TextStyle(color: Colors.red[300], fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: loadReaders,
+              child: Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (librarians.isEmpty) {
+      return Center(
+        child: Text(
+          'No users available. Add users by clicking the "+" button above.',
+          style: TextStyle(color: Colors.white60, fontSize: 18),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: librarians.length,
+      itemBuilder: (BuildContext context, int index) {
+        final librarian = librarians[index];
+        return Card(
+          color: Color(0xFF4A4A6A),
+          margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 0.0),
+          child: ListTile(
+            contentPadding:
+                EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            title: Text(
+              '${librarian.firstname} ${librarian.lastname}',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
+            subtitle: Text(
+              'Barcode: ${librarian.barcode}',
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+            trailing: IconButton(
+              icon: Icon(Icons.edit, color: Colors.white),
+              onPressed: () => navigateToEditUserPage(
+                  context, librarian, true, librarian.id == _currentUserId),
               tooltip: 'Edit User',
             ),
           ),

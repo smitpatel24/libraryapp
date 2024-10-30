@@ -1,18 +1,18 @@
-class Reader {
+class UserDTO {
   final String firstname;
   final String lastname;
   final String barcode;
   final int id;
 
-  Reader({
+  UserDTO({
     required this.firstname,
     required this.lastname,
     required this.barcode,
     required this.id,
   });
 
-  factory Reader.fromSupabase(Map<String, dynamic> json) {
-    return Reader(
+  factory UserDTO.fromSupabase(Map<String, dynamic> json) {
+    return UserDTO(
       firstname: json['firstname'] as String,
       lastname: json['lastname'] as String,
       barcode: json['barcode'] as String? ?? '',
