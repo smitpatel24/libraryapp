@@ -301,6 +301,7 @@ class SupabaseManager {
     required int userId,
     required String firstname,
     required String lastname,
+    required String username,
     required String userBarcode,
   }) async {
     try {
@@ -310,6 +311,7 @@ class SupabaseManager {
           'user_id': userId,
           'first_name': firstname,
           'last_name': lastname,
+          'username': username,
           'user_barcode': userBarcode,
         },
       );

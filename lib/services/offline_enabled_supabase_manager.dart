@@ -89,6 +89,7 @@ class OfflineEnabledSupabaseManager {
           userId: operation.params['userId'],
           firstname: operation.params['firstname'],
           lastname: operation.params['lastname'],
+          username: operation.params['username'],
           userBarcode: operation.params['userBarcode'],
         );
         break;
@@ -171,6 +172,7 @@ class OfflineEnabledSupabaseManager {
     required int userId,
     required String firstname,
     required String lastname,
+    required String username,
     required String barcode,
   }) async {
     final isCurrentlyConnected = await _connectivityService.checkConnectivity();
@@ -180,6 +182,7 @@ class OfflineEnabledSupabaseManager {
         userId: userId,
         firstname: firstname,
         lastname: lastname,
+        username: username,
         userBarcode: barcode,
       );
     } else {
@@ -188,6 +191,7 @@ class OfflineEnabledSupabaseManager {
         'userId': userId,
         'firstname': firstname,
         'lastname': lastname,
+        'username': username,
         'useBarcode': barcode,
       });
     }

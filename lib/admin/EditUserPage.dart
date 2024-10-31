@@ -27,6 +27,7 @@ class _EditUserPageState extends State<EditUserPage> {
 
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
+  late final TextEditingController _usernameController;
   late final TextEditingController _barcodeController;
   late final TextEditingController _passwordController;
   late final TextEditingController _confirmPasswordController;
@@ -41,6 +42,7 @@ class _EditUserPageState extends State<EditUserPage> {
     _firstNameController = TextEditingController(text: widget.user.firstname);
     _lastNameController = TextEditingController(text: widget.user.lastname);
     _barcodeController = TextEditingController(text: widget.user.barcode);
+    _usernameController = TextEditingController(text: widget.user.username);
     _passwordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
     log('User details initialized: ${widget.user}');
@@ -56,6 +58,7 @@ class _EditUserPageState extends State<EditUserPage> {
         userId: widget.user.id,
         firstname: _firstNameController.text,
         lastname: _lastNameController.text,
+        username: _usernameController.text,
         barcode: _barcodeController.text,
       );
 
@@ -101,6 +104,7 @@ class _EditUserPageState extends State<EditUserPage> {
   bool _validateInputs() {
     if (_firstNameController.text.isEmpty ||
         _lastNameController.text.isEmpty ||
+        _usernameController.text.isEmpty ||
         _barcodeController.text.isEmpty) {
       _showErrorMessage('Please fill in all the required fields');
       return false;
@@ -338,6 +342,11 @@ class _EditUserPageState extends State<EditUserPage> {
             _buildTextField(
               label: 'Last Name',
               controller: _lastNameController,
+            ),
+            SizedBox(height: 16),
+            _buildTextField(
+              label: 'Username',
+              controller: _usernameController,
             ),
             SizedBox(height: 16),
             _buildTextField(
