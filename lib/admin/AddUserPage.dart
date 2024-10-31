@@ -1,7 +1,8 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
-import 'package:libraryapp/services/supabase_manager.dart';
+import 'package:libraryapp/services/user_type_service.dart';
+import 'package:libraryapp/services/offline_enabled_supabase_manager.dart';
 
 class AddUserPage extends StatefulWidget {
   @override
@@ -10,14 +11,29 @@ class AddUserPage extends StatefulWidget {
 
 class _AddUserPageState extends State<AddUserPage> {
   // Use singleton instance
-  final SupabaseManager _supabaseManager = SupabaseManager.instance;
-  
+  final OfflineEnabledSupabaseManager _offlineEnabledManager = OfflineEnabledSupabaseManager();
+
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String? _scannedBarcode;
-  bool _isPasswordVisible = false;  // Add state for password visibility
+  bool _isPasswordVisible = false; // Add state for password visibility
+  UserRole _selectedRole = UserRole.reader;
+  bool _isAdmin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUserType();
+  }
+
+  Future<void> _checkUserType() async {
+    bool isAdmin = await UserTypeService.isAdmin();
+    setState(() {
+      _isAdmin = isAdmin;
+    });
+  }
 
   void _createAccount() async {
     if (!_validateInputs()) return;
@@ -31,19 +47,30 @@ class _AddUserPageState extends State<AddUserPage> {
     }
 
     try {
-      log('Calling createUserAsAReader...');
-      await _supabaseManager.createUserAsAReader(
-        firstName: _firstNameController.text,
-        lastName: _lastNameController.text,
-        username: _usernameController.text,
-        password: _passwordController.text,
-        barcode: _scannedBarcode!,
-      );
+      if(_selectedRole == UserRole.librarian) {
+        log( 'Creating librarian with barcode: $_scannedBarcode');
+        await _offlineEnabledManager.createUserAsALibrarian(
+          firstName: _firstNameController.text,
+          lastName: _lastNameController.text,
+          username: _usernameController.text,
+          password: _passwordController.text,
+          barcode: _scannedBarcode!,
+        );
+      } else {
+        log( 'Creating reader with barcode: $_scannedBarcode');
+        await _offlineEnabledManager.createUserAsAReader(
+          firstName: _firstNameController.text,
+          lastName: _lastNameController.text,
+          username: _usernameController.text,
+          barcode: _scannedBarcode!,
+        );
+      }
 
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
         _clearForm();
-        _showSuccessMessage('User created successfully! Form cleared for new entry.');
+        _showSuccessMessage(
+            'User created successfully! Form cleared for new entry.');
       }
     } catch (error) {
       if (mounted) {
@@ -56,14 +83,18 @@ class _AddUserPageState extends State<AddUserPage> {
   bool _validateInputs() {
     if (_firstNameController.text.isEmpty ||
         _lastNameController.text.isEmpty ||
-        _usernameController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
+        _usernameController.text.isEmpty) {
       _showErrorMessage('Please fill in all the fields');
       return false;
     }
 
+    if(_selectedRole == UserRole.librarian && _passwordController.text.isEmpty) {
+      _showErrorMessage('Please enter a password for the librarian');
+      return false;
+    }
+
     if (_scannedBarcode == null) {
-      _showErrorMessage('Please scan a barcode first');
+      _showErrorMessage('Please scan a barcode');
       return false;
     }
 
@@ -106,9 +137,9 @@ class _AddUserPageState extends State<AddUserPage> {
         true,
         ScanMode.BARCODE,
       );
-      
+
       if (!mounted) return;
-      
+
       if (barcodeScanRes != '-1') {
         setState(() => _scannedBarcode = barcodeScanRes);
         _showSuccessMessage('Barcode scanned: $barcodeScanRes');
@@ -144,17 +175,24 @@ class _AddUserPageState extends State<AddUserPage> {
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 24),
-            _buildTextField(label: 'First Name', controller: _firstNameController),
             SizedBox(height: 16),
-            _buildTextField(label: 'Last Name', controller: _lastNameController),
+            _buildRoleSelector(),
+            SizedBox(height: 24),
+            _buildTextField(
+                label: 'First Name', controller: _firstNameController),
+            SizedBox(height: 16),
+            _buildTextField(
+                label: 'Last Name', controller: _lastNameController),
             SizedBox(height: 16),
             _buildTextField(label: 'Username', controller: _usernameController),
             SizedBox(height: 16),
-            _buildPasswordField(),
-            SizedBox(height: 24),
-            _buildBarcodeScanner(),
-            SizedBox(height: 24),
+            // Only show password field for librarian
+            if (_selectedRole == UserRole.librarian) ...[
+              _buildPasswordField(),
+              SizedBox(height: 16),
+            ],
+              _buildBarcodeScanner(),
+              SizedBox(height: 24),
             _buildCreateAccountButton(),
             SizedBox(height: 80),
           ],
@@ -235,7 +273,9 @@ class _AddUserPageState extends State<AddUserPage> {
             ),
             const SizedBox(height: 10),
             Text(
-              _scannedBarcode != null ? 'Barcode: $_scannedBarcode' : 'Scan barcode',
+              _scannedBarcode != null
+                  ? 'Barcode: $_scannedBarcode'
+                  : 'Scan barcode',
               style: TextStyle(
                 color: _scannedBarcode != null ? Colors.green : Colors.white70,
               ),
@@ -258,6 +298,49 @@ class _AddUserPageState extends State<AddUserPage> {
       onPressed: _createAccount,
       child: Text('Create Account',
           style: TextStyle(fontSize: 18, color: Colors.white)),
+    );
+  }
+
+  Widget _buildRoleSelector() {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8.0),
+      child: SegmentedButton<UserRole>(
+        segments: [
+          ButtonSegment<UserRole>(
+            value: UserRole.reader,
+            label: Text('Reader'),
+            icon: Icon(Icons.person_outline),
+          ),
+          if (_isAdmin)
+            ButtonSegment<UserRole>(
+              value: UserRole.librarian,
+              label: Text('Librarian'),
+              icon: Icon(Icons.admin_panel_settings),
+            ),
+        ],
+        selected: {_selectedRole},
+        onSelectionChanged: (Set<UserRole> newSelection) {
+          setState(() {
+            _selectedRole = newSelection.first;
+            _clearForm();
+          });
+        },
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith<Color>(
+            (Set<WidgetState> states) {
+              if (states.contains(WidgetState.selected)) {
+                return Colors.green;
+              }
+              return Colors.white24;
+            },
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith<Color>(
+            (Set<WidgetState> states) {
+              return Colors.white;
+            },
+          ),
+        ),
+      ),
     );
   }
 

@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:libraryapp/models/reader.dart';
+import 'package:libraryapp/models/user_dto.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert'; // for utf8.encode
 import 'package:shared_preferences/shared_preferences.dart';
@@ -71,7 +71,7 @@ class SupabaseManager {
     final user = response;
     final passwordHash = _hashPassword(password);
     if (passwordHash == user['passwordhash']) {
-      await _setLoginState(true, user['usertype']);
+      await _setLoginState(true, user['usertype'], user['userid']);
       return user;
     }
 
@@ -86,10 +86,11 @@ class SupabaseManager {
   }
 
   // Method to set login state in SharedPreferences
-  Future<void> _setLoginState(bool loggedIn, int userType) async {
+  Future<void> _setLoginState(bool loggedIn, int userType, int userId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('loggedIn', loggedIn);
     await prefs.setInt('userType', userType);
+    await prefs.setInt('userId', userId);
   }
 
   // Method to get login state from SharedPreferences
@@ -104,11 +105,18 @@ class SupabaseManager {
     return prefs.getInt('userType');
   }
 
+  // Method to get user type from SharedPreferences
+  Future<int?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('userId');
+  }
+
   // Method to log out user
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('loggedIn');
     await prefs.remove('userType');
+    await prefs.remove('userId');
   }
 
   // Method to find or add an author and return the authorId
@@ -211,14 +219,10 @@ class SupabaseManager {
     required String firstName,
     required String lastName,
     required String username,
-    required String password,
     required String barcode,
   }) async {
-    log('Creating user: $firstName $lastName');
+    log('Creating reader: $firstName $lastName');
     try {
-      // Hash the password before storing it in the database
-      final passwordHash = _hashPassword(password);
-
       // call sql function to create user
       final response = await client.rpc(
         'create_reader',
@@ -226,64 +230,139 @@ class SupabaseManager {
           'first_name': firstName,
           'last_name': lastName,
           'user_name': username,
-          'password_hash': passwordHash,
+          'password_hash': '', // Password is not required for readers
           'reader_barcode': barcode,
         },
       );
 
-      
-      log('User created: $response');
+      log('Reader created: $response');
     } catch (e) {
       // Log the error or throw it to be caught by the calling method
-      throw Exception('Failed to create user: $e');
+      throw Exception('Failed to create reader: $e');
+    }
+  }
+
+  // Method to create a new user as a librarain
+  Future<void> createUserAsALibrarian({
+    required String firstName,
+    required String lastName,
+    required String username,
+    required String password,
+    required String barcode,
+  }) async {
+    log('Creating Reader: $firstName $lastName');
+    try {
+      // Hash the password before storing it in the database
+      final passwordHash = _hashPassword(password);
+
+      // call sql function to create user
+      final response = await client.rpc(
+        'create_librarian',
+        params: {
+          'first_name': firstName,
+          'last_name': lastName,
+          'user_name': username,
+          'password_hash': passwordHash,
+          'barcode': barcode,
+        },
+      );
+
+      log('Librarian created: $response');
+    } catch (e) {
+      // Log the error or throw it to be caught by the calling method
+      throw Exception('Failed to create Librarian: $e');
     }
   }
 
   // Method to fetch all readers
-  Future<List<Reader>> fetchAllReaders() async {
+  Future<List<UserDTO>> fetchAllReaders() async {
     try {
       final response = await client.rpc('get_readers');
       final List data = response as List;
-      return data.map((user) => Reader.fromSupabase(user)).toList();
+      return data.map((user) => UserDTO.fromSupabase(user)).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch readers: $e');
+    }
+  }
+
+  // Method to fetch all librarians
+  Future<List<UserDTO>> fetchAllLibrarians() async {
+    try {
+      final response = await client.from('librarianinfo').select();
+      final List data = response as List;
+      return data.map((user) => UserDTO.fromSupabase(user)).toList();
     } catch (e) {
       throw Exception('Failed to fetch readers: $e');
     }
   }
 
   // Method to update reader details
-  Future<void> updateReader({
-    required int readerId,
+  Future<void> updateUser({
+    required int userId,
     required String firstname,
     required String lastname,
-    required String barcode,
+    required String username,
+    required String userBarcode,
   }) async {
     try {
       final response = await client.rpc(
-        'update_reader',
+        'update_user',
         params: {
-          'reader_id': readerId,
+          'user_id': userId,
           'first_name': firstname,
           'last_name': lastname,
-          'reader_barcode': barcode,
+          'username': username,
+          'user_barcode': userBarcode,
         },
       );
 
-      log('Reader updated: $response');
+      log('User updated: $response');
     } catch (e) {
-      throw Exception('Failed to update reader: $e');
+      throw Exception('Failed to update User: $e');
     }
   }
 
-  // Method to delete a reader
-  Future<void> deleteReader(int readerId) async {
+  // Method to delete a user
+  Future<void> deleteUser(int userId) async {
     try {
-      log('Deleting reader with ID: $readerId');
-      final response = await client
-          .rpc('delete_reader', params: {'reader_id': readerId});
+      log('Deleting reader with ID: $userId');
+      final response =
+          await client.rpc('delete_user', params: {'user_id': userId});
 
-      log('Delete response: ${response.data}');
+      log('Delete response: ${response.toString()}');
     } catch (e) {
-      throw Exception('Failed to delete reader: $e');
+      throw Exception('Failed to delete user: $e');
+    }
+  }
+
+  Future<void> setUserPassword(
+      {required int userId, required String userPassword}) async {
+    try {
+      final passwordHash = _hashPassword(userPassword);
+      final response = await client.rpc(
+        'update_user_password',
+        params: {
+          'user_id': userId,
+          'hashed_password': passwordHash,
+        },
+      );
+
+      log('Password set for user ID $userId: $response');
+    } catch (e) {
+      throw Exception('Failed to set user password: $e');
+    }
+  }
+
+  Future<UserDTO> fetchLibrarianById(int currentUserId) {
+    try {
+      return client
+          .from('librarianinfo')
+          .select()
+          .eq('id', currentUserId)
+          .single()
+          .then((data) => UserDTO.fromSupabase(data));
+    } catch (e) {
+      throw Exception('Failed to fetch librarian: $e');
     }
   }
 }

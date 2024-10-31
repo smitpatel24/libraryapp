@@ -70,17 +70,34 @@ class OfflineEnabledSupabaseManager {
           firstName: operation.params['first_name'],
           lastName: operation.params['last_name'],
           username: operation.params['username'],
+          barcode: operation.params['barcode'],
+        );
+        break;
+
+      case 'createUserAsALibrarian':
+        await _supabaseManager.createUserAsALibrarian(
+          firstName: operation.params['first_name'],
+          lastName: operation.params['last_name'],
+          username: operation.params['username'],
           password: operation.params['password'],
           barcode: operation.params['barcode'],
         );
         break;
 
-      case 'updateReader':
-        await _supabaseManager.updateReader(
-          readerId: operation.params['readerId'],
+      case 'updateUser':
+        await _supabaseManager.updateUser(
+          userId: operation.params['userId'],
           firstname: operation.params['firstname'],
           lastname: operation.params['lastname'],
-          barcode: operation.params['barcode'],
+          username: operation.params['username'],
+          userBarcode: operation.params['userBarcode'],
+        );
+        break;
+
+      case 'setUserPassword':
+        await _supabaseManager.setUserPassword(
+          userId: operation.params['userId'],
+          userPassword: operation.params['userPassword'],
         );
         break;
 
@@ -90,20 +107,10 @@ class OfflineEnabledSupabaseManager {
     }
   }
 
-  // Future<Map<String, dynamic>?> authenticateUser(String username, String password) async {
-  //   if (_isConnected) {
-  //     return await _supabaseManager.authenticateUser(username, password);
-  //   } else {
-  //     await _queueOperation('authenticateUser', {'username': username, 'password': password});
-  //     return null;
-  //   }
-  // }
-
   Future<void> createUserAsAReader({
     required String firstName,
     required String lastName,
     required String username,
-    required String password,
     required String barcode,
   }) async {
     final isCurrentlyConnected = await _connectivityService.checkConnectivity();
@@ -114,13 +121,43 @@ class OfflineEnabledSupabaseManager {
         firstName: firstName,
         lastName: lastName,
         username: username,
-        password: password,
         barcode: barcode,
       );
       return;
     } else {
       log('Creating user: $firstName $lastName, queuing operation');
       await _queueOperation('createUserAsAReader', {
+        'first_name': firstName,
+        'last_name': lastName,
+        'username': username,
+        'barcode': barcode,
+      });
+      return;
+    }
+  }
+
+  Future<void> createUserAsALibrarian({
+    required String firstName,
+    required String lastName,
+    required String username,
+    required String password,
+    required String barcode,
+  }) async {
+    final isCurrentlyConnected = await _connectivityService.checkConnectivity();
+    log('Creating user: $firstName $lastName');
+    if (isCurrentlyConnected) {
+      log('Creating user: $firstName $lastName, using Supabase');
+      await _supabaseManager.createUserAsALibrarian(
+        firstName: firstName,
+        lastName: lastName,
+        username: username,
+        password: password,
+        barcode: barcode,
+      );
+      return;
+    } else {
+      log('Creating user: $firstName $lastName, queuing operation');
+      await _queueOperation('createUserAsALibrarian', {
         'first_name': firstName,
         'last_name': lastName,
         'username': username,
@@ -131,28 +168,31 @@ class OfflineEnabledSupabaseManager {
     }
   }
 
-  Future<void> updateReader({
-    required int readerId,
+  Future<void> updateUser({
+    required int userId,
     required String firstname,
     required String lastname,
+    required String username,
     required String barcode,
   }) async {
     final isCurrentlyConnected = await _connectivityService.checkConnectivity();
     if (isCurrentlyConnected) {
-      log('Updating reader: $readerId, using Supabase');
-      await _supabaseManager.updateReader(
-        readerId: readerId,
+      log('Updating reader: $userId, using Supabase');
+      await _supabaseManager.updateUser(
+        userId: userId,
         firstname: firstname,
         lastname: lastname,
-        barcode: barcode,
+        username: username,
+        userBarcode: barcode,
       );
     } else {
-      log('Updating reader: $readerId, queuing operation');
-      await _queueOperation('updateReader', {
-        'readerId': readerId,
+      log('Updating user: $userId, queuing operation');
+      await _queueOperation('updateUser', {
+        'userId': userId,
         'firstname': firstname,
         'lastname': lastname,
-        'barcode': barcode,
+        'username': username,
+        'useBarcode': barcode,
       });
     }
   }
@@ -176,11 +216,29 @@ class OfflineEnabledSupabaseManager {
 
     if (isCurrentlyConnected) {
       log('Deleting reader: $readerId, using Supabase');
-      await _supabaseManager.deleteReader(readerId);
+      await _supabaseManager.deleteUser(readerId);
     } else {
       log('Deleting reader: $readerId, queuing operation');
       await _queueOperation('deleteReader', {
         'readerId': readerId,
+      });
+    }
+  }
+
+  Future<void> setUserPassword(
+      {required int userId, required String userPassword}) async {
+    final isCurrentlyConnected = await _connectivityService.checkConnectivity();
+    if (isCurrentlyConnected) {
+      log('Setting password for user: $userId, using Supabase');
+      await _supabaseManager.setUserPassword(
+        userId: userId,
+        userPassword: userPassword,
+      );
+    } else {
+      log('Setting password for user: $userId, queuing operation');
+      await _queueOperation('setUserPassword', {
+        'userId': userId,
+        'userPassword': userPassword,
       });
     }
   }
@@ -194,9 +252,8 @@ class OfflineEnabledSupabaseManager {
   // show toast message
   void _showToast([String? message]) {
     BotToast.showText(
-      text: message ?? "Curretnly offline mode, operation queued",
-      duration: const Duration(seconds: 2),
-      contentColor: Colors.green
-    );
+        text: message ?? "Curretnly offline mode, operation queued",
+        duration: const Duration(seconds: 2),
+        contentColor: Colors.green);
   }
 }
