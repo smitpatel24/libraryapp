@@ -334,6 +334,11 @@ class _AddUserPageState extends State<AddUserPage> {
               return Colors.white24;
             },
           ),
+          foregroundColor: WidgetStateProperty.resolveWith<Color>(
+            (Set<WidgetState> states) {
+              return Colors.white;
+            },
+          ),
         ),
       ),
     );

@@ -1,4 +1,7 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:libraryapp/models/user_dto.dart';
 import 'package:libraryapp/services/supabase_manager.dart';
 import 'package:libraryapp/services/user_type_service.dart';
@@ -37,6 +40,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
   Future<void> _checkUserType() async {
     bool isAdmin = await UserTypeService.isAdmin();
     int userId = await UserTypeService.getUserId();
+    log('UserDetailsPage checkUserType: isAdmin: $isAdmin, userId: $userId');
     setState(() {
       _isAdmin = isAdmin;
       _currentUserId = userId;
@@ -76,7 +80,15 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
         librariansLoadingError = null;
       });
 
-      final fetchedLibrarians = await _supabaseManager.fetchAllLibrarians();
+      List<UserDTO> fetchedLibrarians;
+      
+      if (_isAdmin) {
+        // Admins can see all librarians
+        fetchedLibrarians = await _supabaseManager.fetchAllLibrarians();
+      } else {
+        // Regular librarians can only see their own information
+        fetchedLibrarians = [await _supabaseManager.fetchLibrarianById(_currentUserId)];
+      }
 
       setState(() {
         librarians = fetchedLibrarians;
@@ -161,6 +173,12 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _buildRoleSelector(),
+            if (!_isAdmin && _selectedRole == UserRole.librarian) ...[
+              Text(
+                'Use admin account to see all libarians\' information.',
+                style: TextStyle(color: Colors.red, fontSize: 14),
+              ),
+              ],
             SizedBox(height: 10),
             Expanded(
               child: _selectedRole == UserRole.reader
@@ -208,6 +226,11 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                 return Colors.green;
               }
               return Colors.white24;
+            },
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith<Color>(
+            (Set<WidgetState> states) {
+              return Colors.white;
             },
           ),
         ),

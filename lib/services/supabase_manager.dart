@@ -297,26 +297,26 @@ class SupabaseManager {
   }
 
   // Method to update reader details
-  Future<void> updateReader({
-    required int readerId,
+  Future<void> updateUser({
+    required int userId,
     required String firstname,
     required String lastname,
-    required String barcode,
+    required String userBarcode,
   }) async {
     try {
       final response = await client.rpc(
-        'update_reader',
+        'update_user',
         params: {
-          'reader_id': readerId,
+          'user_id': userId,
           'first_name': firstname,
           'last_name': lastname,
-          'reader_barcode': barcode,
+          'user_barcode': userBarcode,
         },
       );
 
-      log('Reader updated: $response');
+      log('User updated: $response');
     } catch (e) {
-      throw Exception('Failed to update reader: $e');
+      throw Exception('Failed to update User: $e');
     }
   }
 
@@ -330,6 +330,36 @@ class SupabaseManager {
       log('Delete response: ${response.data}');
     } catch (e) {
       throw Exception('Failed to delete reader: $e');
+    }
+  }
+
+  Future<void> setUserPassword({required int userId, required String userPassword}) async {
+    try {
+      final passwordHash = _hashPassword(userPassword);
+      final response = await client.rpc(
+        'update_user_password',
+        params: {
+          'user_id': userId,
+          'hashed_password': passwordHash,
+        },
+      );
+
+      log('Password set for user ID $userId: $response');
+    } catch (e) {
+      throw Exception('Failed to set user password: $e');
+    }
+  }
+
+  Future<UserDTO> fetchLibrarianById(int currentUserId) {
+    try {
+      return client
+        .from('librarianinfo')
+        .select()
+        .eq('id', currentUserId)
+        .single()
+        .then((data) => UserDTO.fromSupabase(data));
+    } catch (e) {
+      throw Exception('Failed to fetch librarian: $e');
     }
   }
 }
