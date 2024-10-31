@@ -216,7 +216,7 @@ class OfflineEnabledSupabaseManager {
 
     if (isCurrentlyConnected) {
       log('Deleting reader: $readerId, using Supabase');
-      await _supabaseManager.deleteReader(readerId);
+      await _supabaseManager.deleteUser(readerId);
     } else {
       log('Deleting reader: $readerId, queuing operation');
       await _queueOperation('deleteReader', {

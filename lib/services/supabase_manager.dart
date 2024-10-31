@@ -322,20 +322,21 @@ class SupabaseManager {
     }
   }
 
-  // Method to delete a reader
-  Future<void> deleteReader(int readerId) async {
+  // Method to delete a user
+  Future<void> deleteUser(int userId) async {
     try {
-      log('Deleting reader with ID: $readerId');
+      log('Deleting reader with ID: $userId');
       final response =
-          await client.rpc('delete_reader', params: {'reader_id': readerId});
+          await client.rpc('delete_user', params: {'user_id': userId});
 
-      log('Delete response: ${response.data}');
+      log('Delete response: ${response.toString()}');
     } catch (e) {
-      throw Exception('Failed to delete reader: $e');
+      throw Exception('Failed to delete user: $e');
     }
   }
 
-  Future<void> setUserPassword({required int userId, required String userPassword}) async {
+  Future<void> setUserPassword(
+      {required int userId, required String userPassword}) async {
     try {
       final passwordHash = _hashPassword(userPassword);
       final response = await client.rpc(
@@ -355,11 +356,11 @@ class SupabaseManager {
   Future<UserDTO> fetchLibrarianById(int currentUserId) {
     try {
       return client
-        .from('librarianinfo')
-        .select()
-        .eq('id', currentUserId)
-        .single()
-        .then((data) => UserDTO.fromSupabase(data));
+          .from('librarianinfo')
+          .select()
+          .eq('id', currentUserId)
+          .single()
+          .then((data) => UserDTO.fromSupabase(data));
     } catch (e) {
       throw Exception('Failed to fetch librarian: $e');
     }

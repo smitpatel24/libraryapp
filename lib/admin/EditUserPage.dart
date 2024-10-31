@@ -497,12 +497,11 @@ class _EditUserPageState extends State<EditUserPage> {
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
-    bool isPassword = false,
-    bool isPasswordVisible = false,
+    bool isPassword = false
   }) {
     return TextField(
       controller: controller,
-      obscureText: isPassword && !isPasswordVisible,
+      obscureText: isPassword && !_isPasswordVisible,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Colors.white70),

@@ -160,7 +160,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
         actions: [
           IconButton(
             icon: Icon(Icons.refresh, color: Colors.white),
-            onPressed: loadReaders,
+            onPressed: loadData,
             tooltip: 'Refresh',
           ),
         ],
