@@ -4,7 +4,7 @@ import 'package:libraryapp/admin/UserDetailsPage.dart';
 import 'package:libraryapp/user/screens/checkout_screen.dart';
 import '../InventoryPage.dart';
 import '../OverduePage.dart';
-import 'screens/return_screen.dart';
+import 'screens/return_book_screen.dart';
 import '../services/supabase_manager.dart';
 import '../SignInScreen.dart';
 
@@ -102,7 +102,7 @@ class UserHomePage extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ReturnScreen()),
+                MaterialPageRoute(builder: (context) => const ReturnBookPage()),
               );
             },
           ),

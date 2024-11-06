@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:libraryapp/models/book.dart';
 import 'package:libraryapp/models/user_dto.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert'; // for utf8.encode
@@ -363,6 +364,24 @@ class SupabaseManager {
           .then((data) => UserDTO.fromSupabase(data));
     } catch (e) {
       throw Exception('Failed to fetch librarian: $e');
+    }
+  }
+
+  Future<Book?> getCheckeoutBookByBarcode(String barcode) async {
+    try {
+      final response = await client
+          .from('bookcopiesview')
+          .select()
+          .eq('barcode', barcode)
+          .single();
+
+      log('Book response: $response');
+
+      // Map the response data to a Book instance
+      return Book.fromView(response);
+    } catch (e) {
+      log("Exception occurred while fetching book: $e");
+      return null;
     }
   }
 }
