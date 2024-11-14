@@ -35,18 +35,53 @@ class _AddBookPageState extends State<AddBookPage> {
   }
 
   void _addBook() async {
+    // Validate required fields first
+    if (_bookIdController.text.isEmpty ||
+        _bookNameController.text.isEmpty ||
+        _barcodeIdController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Book ID, Book Title, and Barcode are required fields'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     print("Attempting to add a book");
     try {
       String normalized_aname = normalizeAuthorName(_authorNameController.text);
       int? authorId = await SupabaseManager().ensureAuthorExists(normalized_aname, int.parse(_bookIdController.text));
+      
       if (authorId == -1) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Book ID already exists. Please try again.'))
+        // Book already exists, so let's add a copy instead
+        try {
+          await SupabaseManager().addBookCopy(
+            _bookIdController.text,  
+            _barcodeIdController.text
           );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('New copy added successfully!'))
+            );
+            _bookIdController.clear();
+            _bookNameController.clear();
+            _authorNameController.clear();
+            _barcodeIdController.clear();
+            setState(() {
+              _barcodeImage = null;
+            });
+          }
+        } catch (copyError) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to add book copy'))
+            );
+          }
         }
         return;
       }
+
       if (authorId == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -55,10 +90,13 @@ class _AddBookPageState extends State<AddBookPage> {
         }
         return;
       }
+
+      // Add new book and its first copy
       await SupabaseManager().addBook(
           _bookIdController.text,
           _bookNameController.text,
-          authorId
+          authorId,
+          _barcodeIdController.text
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

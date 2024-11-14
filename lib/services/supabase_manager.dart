@@ -180,7 +180,7 @@ class SupabaseManager {
   }
 
   // Method to add a book with authorId
-  Future<void> addBook(String bookId, String title, int authorId) async {
+  Future<void> addBook(String bookId, String title, int authorId, String barcode) async {
     var response = await client
         .from('books')
         .insert({'bookid': bookId, 'title': title, 'authorid': authorId});
@@ -188,8 +188,19 @@ class SupabaseManager {
     // Add a new entry to the bookcopies table
     var copyResponse = await client
         .from('bookcopies')
-        .insert({'bookid': bookId, 'available': true});
+        .insert({'bookid': bookId, 'barcode': barcode, 'available': true});
   }
+
+  // Method to add a book copy with bookId and barcode
+Future<void> addBookCopy(String bookId, String barcode) async {
+  await client
+      .from('bookcopies')
+      .insert({
+        'bookid': bookId,
+        'barcode': barcode,
+        'available': true
+      });
+}
 
   /// Method to fetch all books info from the view
   Future<List<Map<String, dynamic>>> fetchAllBooksInfo() async {
