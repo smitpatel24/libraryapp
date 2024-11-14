@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
-import '../services/supabase_manager.dart';  // Ensure this import points to your SupabaseManager class correctly
+import '../services/supabase_manager.dart';
 
 class AddBookPage extends StatefulWidget {
   @override
@@ -16,7 +12,6 @@ class _AddBookPageState extends State<AddBookPage> {
   final TextEditingController _authorNameController = TextEditingController();
   final TextEditingController _bookIdController = TextEditingController();
   final TextEditingController _barcodeIdController = TextEditingController();
-  File? _barcodeImage;
 
   @override
   void dispose() {
@@ -68,9 +63,6 @@ class _AddBookPageState extends State<AddBookPage> {
             _bookNameController.clear();
             _authorNameController.clear();
             _barcodeIdController.clear();
-            setState(() {
-              _barcodeImage = null;
-            });
           }
         } catch (copyError) {
           if (mounted) {
@@ -106,9 +98,6 @@ class _AddBookPageState extends State<AddBookPage> {
         _bookNameController.clear();
         _authorNameController.clear();
         _barcodeIdController.clear();
-        setState(() {
-          _barcodeImage = null;
-        });
       }
     } catch (error) {
       if (mounted) {
@@ -130,29 +119,6 @@ class _AddBookPageState extends State<AddBookPage> {
       setState(() {
         _barcodeIdController.text = barcodeScanRes;
       });
-    }
-  }
-
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
-
-    if (pickedFile != null) {
-      final directory = await getApplicationDocumentsDirectory();
-      final filePath = path.join(directory.path, '${DateTime.now().millisecondsSinceEpoch}.png');
-      final File localImage = await File(pickedFile.path).copy(filePath);
-
-      if (mounted) {
-        setState(() {
-          _barcodeImage = localImage;
-        });
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No image selected.'))
-        );
-      }
     }
   }
 
@@ -203,42 +169,6 @@ class _AddBookPageState extends State<AddBookPage> {
               child: const Text('Scan Barcode',
                   style: TextStyle(fontSize: 18, color: Colors.white)),
             ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF615793),
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-              onPressed: _pickImage,
-              child: const Text('Capture Barcode Image',
-                  style: TextStyle(fontSize: 18, color: Colors.white)),
-            ),
-            const SizedBox(height: 30),
-            InkWell(
-              onTap: _pickImage,
-              child: Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  color: Colors.white12,
-                  borderRadius: BorderRadius.circular(10.0),
-                  image: _barcodeImage != null ? DecorationImage(
-                    image: FileImage(_barcodeImage!),
-                    fit: BoxFit.cover,
-                  ) : null,
-                ),
-                child: _barcodeImage == null ? const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.camera_alt, color: Colors.white54),
-                    Text('Capture barcode image:',
-                        style: TextStyle(color: Colors.white70)),
-                  ],
-                ) : null,
-              ),
-            ),
             const SizedBox(height: 30),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -282,5 +212,3 @@ class _AddBookPageState extends State<AddBookPage> {
     );
   }
 }
-
-void main() => runApp(MaterialApp(home: AddBookPage()));
