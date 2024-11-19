@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert'; // for utf8.encode
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart'; // For formatting dates
 
 class SupabaseManager {
   static const String supabaseUrl = 'https://dravtxcouwimsuugpdbc.supabase.co';
@@ -192,15 +193,15 @@ class SupabaseManager {
   }
 
   // Method to add a book copy with bookId and barcode
-Future<void> addBookCopy(String bookId, String barcode) async {
-  await client
-      .from('bookcopies')
-      .insert({
-        'bookid': bookId,
-        'barcode': barcode,
-        'available': true
-      });
-}
+  Future<void> addBookCopy(String bookId, String barcode) async {
+    await client
+        .from('bookcopies')
+        .insert({
+          'bookid': bookId,
+          'barcode': barcode,
+          'available': true
+        });
+  }
 
   /// Method to fetch all books info from the view
   Future<List<Map<String, dynamic>>> fetchAllBooksInfo() async {
@@ -376,4 +377,93 @@ Future<void> addBookCopy(String bookId, String barcode) async {
       throw Exception('Failed to fetch librarian: $e');
     }
   }
+
+  // Method to checkout book
+  Future<void> checkoutBook(String bookBarcode, String userBarcode, String dueDate) async {
+    try {
+      // Check if the book copy is available
+      var bookCopy = await client
+          .from('bookcopies')
+          .select('copyid, available')
+          .eq('barcode', bookBarcode)
+          .single();
+
+      if (bookCopy == null) {
+        throw Exception("Book copy not found.");
+      }
+
+      if (!bookCopy['available']) {
+        throw Exception("Book is not available for checkout.");
+      }
+
+      // Fetch the user ID using the user barcode
+      var user = await client
+          .from('users')
+          .select('userid')
+          .eq('barcode', userBarcode)
+          .single();
+
+      if (user == null) {
+        throw Exception("User not found.");
+      }
+
+      var userId = user['userid'];
+      var copyId = bookCopy['copyid'];
+
+      // Get today's date in YYYY-MM-DD format
+      String transactionDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+      // Insert the transaction into the transactions table
+      var transactionResponse = await client.from('transactions').insert({
+        'userid': userId,
+        'transactiontype': 1, // 1 for checkout
+        'transactiondate': transactionDate,
+        'duedate': dueDate,
+        'copyid': copyId
+      });
+
+      print("Checkout successful.");
+    } catch (e) {
+      throw Exception(e.toString()); // Rethrow the error to be handled by caller
+    }
+  }
+
+  // Method to fetch checkout details
+  Future<Map<String, dynamic>> fetchCheckoutDetails(
+    String bookBarcode,
+    String readerBarcode,
+  ) async {
+    try {
+      // Fetch book details from the bookcopiesview table
+      final bookResponse = await client
+          .from('bookcopiesview')
+          .select('booktitle, authorname')
+          .eq('barcode', bookBarcode)
+          .single();
+
+      // Fetch reader details from the readers table
+      final readerResponse = await client
+          .from('readers')
+          .select('fname, lname')
+          .eq('barcode', readerBarcode)
+          .single();
+
+      // Extract the data from the responses
+      final bookData = bookResponse;
+      final readerData = readerResponse;
+
+      // Return the combined data as a map
+      return {
+        'bookTitle': bookData['booktitle'],
+        'author': bookData['authorname'],
+        'readerFirstName': readerData['fname'],
+        'readerLastName': readerData['lname'],
+      };
+    } catch (error) {
+      print('Error fetching checkout details: $error');
+      throw error;  // Rethrow error to be handled by calling code
+    }
+  }
 }
+
+
