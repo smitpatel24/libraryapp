@@ -36,7 +36,7 @@ class SuccessfulBookReturnScreen extends StatelessWidget {
                         ),
                         TextWidget2(
                           alignnment: TextAlign.center,
-                          tittle: "RETURN SUCCESSFUL!",
+                          tittle: "RETURN SUCCESSFULL!",
                           maxTextlines: 3,
                           textSize: Responsive.isMobile(context) ? 35 : 40,
                           tittleColor: AppColor.successMsgTextColor,

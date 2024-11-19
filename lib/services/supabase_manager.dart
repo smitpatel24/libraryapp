@@ -464,6 +464,45 @@ class SupabaseManager {
       throw error;  // Rethrow error to be handled by calling code
     }
   }
+
+  // Method to return book
+  Future<void> returnBook(String bookBarcode) async {
+    try {
+      // First fetch the copyid and available status from bookcopies table using barcode
+      final copyResponse = await client
+          .from('bookcopies')
+          .select('copyid, available')
+          .eq('barcode', bookBarcode)
+          .maybeSingle();
+
+      if (copyResponse == null) {
+        throw Exception('No book found with barcode: $bookBarcode');
+      }
+
+      final copyId = copyResponse['copyid'];
+      final bool isAvailable = copyResponse['available'];
+
+      if (isAvailable) {
+        throw Exception('This book is already in the library');
+      }
+
+      // Get current date for transaction
+      final transactionDate = DateTime.now().toIso8601String();
+
+      // Insert return transaction
+      await client.from('transactions').insert({
+        'transactiontype': 2, // 2 for return
+        'transactiondate': transactionDate,
+        'copyid': copyId
+      });
+
+      print("Book return successful.");
+    } catch (e) {
+      print('Error returning book: $e');
+      throw Exception(e.toString()); // Rethrow the error to be handled by caller
+    }
+  }
+
 }
 
 

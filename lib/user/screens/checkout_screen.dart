@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import '../../services/supabase_manager.dart';
 import 'package:intl/intl.dart';
+import 'package:get/get.dart';
+import 'checkout_success_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -167,12 +169,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             _bookBarcodeController.clear();
                             _userBarcodeController.clear();
                             _dueDateController.clear();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Checkout successful!"),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
+                            Get.to(const CheckoutSuccessScreen());
                           }
                         } catch (error) {
                           if (mounted) {
