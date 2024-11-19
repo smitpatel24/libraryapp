@@ -1,21 +1,6 @@
 import 'package:flutter/material.dart';
+import '/services/supabase_manager.dart';
 
-void main() => runApp(MyApp());
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Overdue',
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: OverduePage(),
-    );
-  }
-}
 
 class OverduePage extends StatefulWidget {
   @override
@@ -23,50 +8,8 @@ class OverduePage extends StatefulWidget {
 }
 
 class _OverduePageState extends State<OverduePage> {
-  final List<Map<String, String>> allItems = [
-    {
-      'title': "The Great Gatsby",
-      'author': 'F. Scott Fitzgerald',
-      'libraryId': 'LB001',
-      'bookId': 'BK001',
-      'issuedBy': 'John Doe',
-      'dueDate': '2023-03-15'
-    },
-    {
-      'title': "To Kill a Mockingbird",
-      'author': 'Harper Lee',
-      'libraryId': 'LB002',
-      'bookId': 'BK002',
-      'issuedBy': 'Jane Smith',
-      'dueDate': '2023-03-20'
-    },
-    {
-      'title': "1984",
-      'author': 'George Orwell',
-      'libraryId': 'LB003',
-      'bookId': 'BK003',
-      'issuedBy': 'Emily Johnson',
-      'dueDate': '2023-03-25'
-    },
-    {
-      'title': "Pride and Prejudice",
-      'author': 'Jane Austen',
-      'libraryId': 'LB004',
-      'bookId': 'BK004',
-      'issuedBy': 'Mike Brown',
-      'dueDate': '2023-03-30'
-    },
-    {
-      'title': "The Catcher in the Rye",
-      'author': 'J.D. Salinger',
-      'libraryId': 'LB005',
-      'bookId': 'BK005',
-      'issuedBy': 'Laura Wilson',
-      'dueDate': '2023-04-04'
-    },
-  ];
-
-  List<Map<String, String>> itemsToShow = [];
+  List<Map<String, dynamic>> allItems = [];
+  List<Map<String, dynamic>> itemsToShow = [];
   int currentPage = 0;
   final int itemsPerPage = 4;
   String searchText = '';
@@ -77,7 +20,20 @@ class _OverduePageState extends State<OverduePage> {
   @override
   void initState() {
     super.initState();
-    itemsToShow = List.from(allItems)..sort(_sortList);
+    _loadCheckedOutBooks();
+  }
+
+  Future<void> _loadCheckedOutBooks() async {
+    try {
+      final books = await SupabaseManager().fetchCheckedOutBooks();
+      setState(() {
+        allItems = books;
+        itemsToShow = List.from(allItems)..sort(_sortList);
+      });
+    } catch (e) {
+      print('Error loading checked out books: $e');
+      // Handle error appropriately
+    }
   }
 
   void _searchItems(String text) {
@@ -90,23 +46,24 @@ class _OverduePageState extends State<OverduePage> {
   void _filterItems() {
     setState(() {
       itemsToShow = allItems.where((item) {
-        return (searchText.isEmpty || item['title']!.toLowerCase().contains(searchText.toLowerCase()) ||
-            item['author']!.toLowerCase().contains(searchText.toLowerCase()) ||
-            item['issuedBy']!.toLowerCase().contains(searchText.toLowerCase())) &&
-            (filterIssuer.isEmpty || item['issuedBy']!.toLowerCase().contains(filterIssuer.toLowerCase()));
+        return (searchText.isEmpty || 
+            item['bookname'].toString().toLowerCase().contains(searchText.toLowerCase()) ||
+            item['authorname'].toString().toLowerCase().contains(searchText.toLowerCase()) ||
+            '${item['firstname']} ${item['lastname']}'.toLowerCase().contains(searchText.toLowerCase())) &&
+            (filterIssuer.isEmpty || '${item['firstname']} ${item['lastname']}'.toLowerCase().contains(filterIssuer.toLowerCase()));
       }).toList();
       itemsToShow.sort(_sortList);
       currentPage = 0;
     });
   }
 
-  int _sortList(Map<String, String> a, Map<String, String> b) {
+  int _sortList(Map<String, dynamic> a, Map<String, dynamic> b) {
     int orderModifier = isAscending ? 1 : -1;
     switch (sortBy) {
       case 'dueDate':
-        return a['dueDate']!.compareTo(b['dueDate']!) * orderModifier;
+        return a['duedate'].toString().compareTo(b['duedate'].toString()) * orderModifier;
       case 'title':
-        return a['title']!.compareTo(b['title']!) * orderModifier;
+        return a['bookname'].toString().compareTo(b['bookname'].toString()) * orderModifier;
       default:
         return 0;
     }
@@ -192,7 +149,7 @@ class _OverduePageState extends State<OverduePage> {
   @override
   Widget build(BuildContext context) {
     int totalPages = (itemsToShow.length / itemsPerPage).ceil();
-    List<Map<String, String>> pageItems = itemsToShow
+    List<Map<String, dynamic>> pageItems = itemsToShow
         .skip(currentPage * itemsPerPage)
         .take(itemsPerPage)
         .toList();
@@ -262,7 +219,7 @@ class _OverduePageState extends State<OverduePage> {
     );
   }
 
-  Widget buildItem(Map<String, String> item) {
+  Widget buildItem(Map<String, dynamic> item) {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -276,7 +233,7 @@ class _OverduePageState extends State<OverduePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              item['title']!,
+              item['bookname'],
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -285,24 +242,24 @@ class _OverduePageState extends State<OverduePage> {
             ),
             SizedBox(height: 8),
             Text(
-              item['author']!,
+              'By ${item['authorname']}',
               style: TextStyle(color: Colors.white70),
             ),
             SizedBox(height: 8),
             Text(
-              'Library ID: ${item['libraryId']}',
+              'Barcode: ${item['barcode']}',
               style: TextStyle(color: Colors.white70),
             ),
             Text(
-              'Book ID: ${item['bookId']}',
+              'Issued By: ${item['firstname']} ${item['lastname']}',
               style: TextStyle(color: Colors.white70),
             ),
             Text(
-              'Issued By: ${item['issuedBy']}',
+              'Checked Out: ${item['checkedoutdate'].toString().split('T')[0]}',
               style: TextStyle(color: Colors.white70),
             ),
             Text(
-              'Due Date: ${item['dueDate']}',
+              'Due Date: ${item['duedate'].toString().split('T')[0]}',
               style: TextStyle(color: Colors.white70),
             ),
           ],

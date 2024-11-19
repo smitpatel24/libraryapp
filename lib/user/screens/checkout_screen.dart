@@ -69,10 +69,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _showReviewModal(BuildContext context) async {
-    if (_bookBarcodeController.text.isEmpty || _userBarcodeController.text.isEmpty) {
+    if (_bookBarcodeController.text.isEmpty || _userBarcodeController.text.isEmpty || _dueDateController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Please enter both book and user barcodes"),
+          content: Text("Please fill in all fields"),
           backgroundColor: Colors.red,
         ),
       );

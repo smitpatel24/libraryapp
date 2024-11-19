@@ -503,6 +503,25 @@ class SupabaseManager {
     }
   }
 
+  // Method to fetch checked out books
+  Future<List<Map<String, dynamic>>> fetchCheckedOutBooks() async {
+    try {
+      final response = await client
+          .from('checkedoutbooks')
+          .select()
+          .order('duedate', ascending: true);
+
+      if (response == null) {
+        return [];
+      }
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (error) {
+      print('Error fetching checked out books: $error');
+      throw error; // Rethrow error to be handled by calling code
+    }
+  }
+
 }
 
 
