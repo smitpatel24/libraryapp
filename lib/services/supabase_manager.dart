@@ -181,24 +181,64 @@ class SupabaseManager {
   }
 
   // Method to add a book with authorId
-  Future<void> addBook(String bookId, String title, int authorId, String barcode) async {
+  Future<void> addBook(String title, int authorId, String barcode) async {
+    // Check if barcode already exists
+    var duplicateCheck = await client
+        .from('bookcopies')
+        .select('barcode')
+        .eq('barcode', barcode);
+
+    if ((duplicateCheck as List).isNotEmpty) {
+      throw Exception('Barcode $barcode already exists');
+    }
+
+    // Insert new book and get the generated bookId
     var response = await client
         .from('books')
-        .insert({'bookid': bookId, 'title': title, 'authorid': authorId});
+        .insert({'title': title, 'authorid': authorId})
+        .select('bookid')
+        .single();
+
+    int bookId = response['bookid'];
 
     // Add a new entry to the bookcopies table
-    var copyResponse = await client
+    await client
         .from('bookcopies')
         .insert({'bookid': bookId, 'barcode': barcode, 'available': true});
   }
 
-  // Method to add a book copy with bookId and barcode
-  Future<void> addBookCopy(String bookId, String barcode) async {
+  // Method to add a book copy
+  Future<void> addBookCopy(String existingBarcode, String newBarcode) async {
+    // Get the book ID from existing barcode
+    var bookIdResponse;
+    try {
+      bookIdResponse = await client
+          .from('bookcopies')
+          .select('bookid')
+          .eq('barcode', existingBarcode)
+          .single();
+    } catch (e) {
+      throw Exception('Book with barcode $existingBarcode not found');
+    }
+
+    int bookId = bookIdResponse['bookid'];
+
+    // Check if new barcode already exists
+    var duplicateCheck = await client
+        .from('bookcopies')
+        .select('barcode')
+        .eq('barcode', newBarcode);
+
+    if ((duplicateCheck as List).isNotEmpty) {
+      throw Exception('Barcode $newBarcode already exists');
+    }
+
+    // Create new copy with found book ID
     await client
         .from('bookcopies')
         .insert({
           'bookid': bookId,
-          'barcode': barcode,
+          'barcode': newBarcode,
           'available': true
         });
   }

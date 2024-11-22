@@ -7,17 +7,20 @@ class AddBookPage extends StatefulWidget {
   _AddBookPageState createState() => _AddBookPageState();
 }
 
+enum BookAddType { newBook, existingBook }
+
 class _AddBookPageState extends State<AddBookPage> {
   final TextEditingController _bookNameController = TextEditingController();
   final TextEditingController _authorNameController = TextEditingController();
-  final TextEditingController _bookIdController = TextEditingController();
+  final TextEditingController _existingBookBarcodeController = TextEditingController();
   final TextEditingController _barcodeIdController = TextEditingController();
+  BookAddType _selectedType = BookAddType.newBook;
 
   @override
   void dispose() {
     _bookNameController.dispose();
     _authorNameController.dispose();
-    _bookIdController.dispose();
+    _existingBookBarcodeController.dispose();
     _barcodeIdController.dispose();
     super.dispose();
   }
@@ -31,49 +34,57 @@ class _AddBookPageState extends State<AddBookPage> {
 
   void _addBook() async {
     // Validate required fields first
-    if (_bookIdController.text.isEmpty ||
-        _bookNameController.text.isEmpty ||
-        _barcodeIdController.text.isEmpty) {
+    if (_barcodeIdController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Book ID, Book Title, and Barcode are required fields'),
+          content: Text('Barcode is a required field'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    print("Attempting to add a book");
+    if (_selectedType == BookAddType.existingBook && _existingBookBarcodeController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Existing Book Barcode is required'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedType == BookAddType.newBook && _bookNameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Book Title is required for new books'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    print("Attempting to ${_selectedType == BookAddType.newBook ? 'add a new book' : 'add a copy'}");
     try {
-      String normalized_aname = normalizeAuthorName(_authorNameController.text);
-      int? authorId = await SupabaseManager().ensureAuthorExists(normalized_aname, int.parse(_bookIdController.text));
-      
-      if (authorId == -1) {
-        // Book already exists, so let's add a copy instead
-        try {
-          await SupabaseManager().addBookCopy(
-            _bookIdController.text,  
-            _barcodeIdController.text
+      if (_selectedType == BookAddType.existingBook) {
+        // Add a copy of existing book
+        await SupabaseManager().addBookCopy(
+          _existingBookBarcodeController.text,  
+          _barcodeIdController.text
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('New copy added successfully!'))
           );
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('New copy added successfully!'))
-            );
-            _bookIdController.clear();
-            _bookNameController.clear();
-            _authorNameController.clear();
-            _barcodeIdController.clear();
-          }
-        } catch (copyError) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Failed to add book copy'))
-            );
-          }
+          _clearForm();
         }
         return;
       }
 
+      // Adding a new book
+      String normalized_aname = normalizeAuthorName(_authorNameController.text);
+      int? authorId = await SupabaseManager().ensureAuthorExists(normalized_aname, 0); // Pass 0 since we don't need bookId check
+      
       if (authorId == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -85,7 +96,6 @@ class _AddBookPageState extends State<AddBookPage> {
 
       // Add new book and its first copy
       await SupabaseManager().addBook(
-          _bookIdController.text,
           _bookNameController.text,
           authorId,
           _barcodeIdController.text
@@ -94,10 +104,7 @@ class _AddBookPageState extends State<AddBookPage> {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Book added successfully!'))
         );
-        _bookIdController.clear();
-        _bookNameController.clear();
-        _authorNameController.clear();
-        _barcodeIdController.clear();
+        _clearForm();
       }
     } catch (error) {
       if (mounted) {
@@ -108,7 +115,14 @@ class _AddBookPageState extends State<AddBookPage> {
     }
   }
 
-  Future<void> _scanBarcode() async {
+  void _clearForm() {
+    _existingBookBarcodeController.clear();
+    _bookNameController.clear();
+    _authorNameController.clear();
+    _barcodeIdController.clear();
+  }
+
+  Future<void> _scanBarcode(TextEditingController controller) async {
     String barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
         "#ff6666",
         "Cancel",
@@ -117,7 +131,7 @@ class _AddBookPageState extends State<AddBookPage> {
     );
     if (barcodeScanRes != "-1" && mounted) {
       setState(() {
-        _barcodeIdController.text = barcodeScanRes;
+        controller.text = barcodeScanRes;
       });
     }
   }
@@ -138,7 +152,7 @@ class _AddBookPageState extends State<AddBookPage> {
           children: <Widget>[
             const SizedBox(height: 20),
             const Text(
-              'Add New Book',
+              'Add Book',
               style: TextStyle(
                 fontSize: 24,
                 color: Colors.white,
@@ -147,28 +161,31 @@ class _AddBookPageState extends State<AddBookPage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 25),
+            _buildTypeSelector(),
+            const SizedBox(height: 25),
+            if (_selectedType == BookAddType.newBook) ...[
+              _buildTextField(
+                  label: 'Book Name', 
+                  controller: _bookNameController,
+                  isScannable: false),
+              const SizedBox(height: 20),
+              _buildTextField(
+                  label: 'Author Name', 
+                  controller: _authorNameController,
+                  isScannable: false),
+              const SizedBox(height: 20),
+            ],
+            if (_selectedType == BookAddType.existingBook)
+              _buildTextField(
+                  label: 'Existing Book Barcode',
+                  controller: _existingBookBarcodeController,
+                  isScannable: true),
+            if (_selectedType == BookAddType.existingBook)
+              const SizedBox(height: 20),
             _buildTextField(
-                label: 'Book Name', controller: _bookNameController),
-            const SizedBox(height: 20),
-            _buildTextField(
-                label: 'Author Name', controller: _authorNameController),
-            const SizedBox(height: 20),
-            _buildTextField(label: 'Book ID', controller: _bookIdController),
-            const SizedBox(height: 20),
-            _buildTextField(label: 'Barcode ID', controller: _barcodeIdController),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF615793),
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-              onPressed: _scanBarcode,
-              child: const Text('Scan Barcode',
-                  style: TextStyle(fontSize: 18, color: Colors.white)),
-            ),
+                label: 'New Copy Barcode', 
+                controller: _barcodeIdController,
+                isScannable: true),
             const SizedBox(height: 30),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -179,10 +196,54 @@ class _AddBookPageState extends State<AddBookPage> {
                 ),
               ),
               onPressed: _addBook,
-              child: const Text('Add Book',
-                  style: TextStyle(fontSize: 18, color: Colors.white)),
+              child: Text(
+                _selectedType == BookAddType.newBook ? 'Add New Book' : 'Add Copy',
+                style: const TextStyle(fontSize: 18, color: Colors.white)
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeSelector() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: SegmentedButton<BookAddType>(
+        segments: const [
+          ButtonSegment<BookAddType>(
+            value: BookAddType.newBook,
+            label: Text('New Book'),
+            icon: Icon(Icons.add_box),
+          ),
+          ButtonSegment<BookAddType>(
+            value: BookAddType.existingBook,
+            label: Text('Add Copy'),
+            icon: Icon(Icons.copy),
+          ),
+        ],
+        selected: {_selectedType},
+        onSelectionChanged: (Set<BookAddType> newSelection) {
+          setState(() {
+            _selectedType = newSelection.first;
+            _clearForm();
+          });
+        },
+        style: ButtonStyle(
+          backgroundColor: MaterialStateProperty.resolveWith<Color>(
+            (Set<MaterialState> states) {
+              if (states.contains(MaterialState.selected)) {
+                return Colors.green;
+              }
+              return Colors.white24;
+            },
+          ),
+          foregroundColor: MaterialStateProperty.resolveWith<Color>(
+            (Set<MaterialState> states) {
+              return Colors.white;
+            },
+          ),
         ),
       ),
     );
@@ -191,6 +252,7 @@ class _AddBookPageState extends State<AddBookPage> {
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
+    bool isScannable = false,
   }) {
     return TextField(
       controller: controller,
@@ -207,6 +269,12 @@ class _AddBookPageState extends State<AddBookPage> {
           borderRadius: BorderRadius.circular(10.0),
           borderSide: const BorderSide(color: Colors.orange, width: 1.5),
         ),
+        suffixIcon: isScannable
+            ? IconButton(
+                icon: const Icon(Icons.qr_code_scanner, color: Colors.white70),
+                onPressed: () => _scanBarcode(controller),
+              )
+            : null,
       ),
       style: const TextStyle(color: Colors.white70),
     );
