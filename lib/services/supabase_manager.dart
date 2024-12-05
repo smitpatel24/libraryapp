@@ -562,6 +562,72 @@ class SupabaseManager {
     }
   }
 
-}
+  // Fetch all copies of a book by bookId
+  Future<List<Map<String, dynamic>>> fetchBookCopies(int bookId) async {
+    try {
+      final response = await client
+          .from('bookcopies')
+          .select()
+          .eq('bookid', bookId)
+          .order('copyid');
 
+      if (response == null) {
+        return [];
+      }
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (error) {
+      print('Error fetching book copies: $error');
+      throw error;
+    }
+  }
+  // Method to update book copy barcode
+  Future<void> updateBookCopyBarcode(int copyId, String newBarcode) async {
+    try {
+      // Check if barcode already exists
+      var duplicateCheck = await client
+          .from('bookcopies')
+          .select('barcode')
+          .eq('barcode', newBarcode);
+
+      if ((duplicateCheck as List).isNotEmpty) {
+        throw Exception('Barcode $newBarcode already exists');
+      }
+
+      // Update the barcode for the given copyId
+      await client
+          .from('bookcopies')
+          .update({'barcode': newBarcode})
+          .eq('copyid', copyId);
+    } catch (error) {
+      print('Error updating book copy barcode: $error');
+      throw error;
+    }
+  }
+  // Method to delete a book copy
+  Future<void> deleteBookCopy(int copyId) async {
+    try {
+      // Check if book is currently checked out
+      final bookCopy = await client
+          .from('bookcopies')
+          .select('available')
+          .eq('copyid', copyId)
+          .single();
+
+      if (!bookCopy['available']) {
+        throw Exception("Cannot delete a checked out book");
+      }
+
+      // Then delete the book copy
+      await client
+          .from('bookcopies')
+          .delete()
+          .eq('copyid', copyId);
+    } catch (error) {
+      print('Error deleting book copy: $error');
+      throw error;
+    }
+  }
+}
+  
 
