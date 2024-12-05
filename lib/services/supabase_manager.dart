@@ -618,6 +618,12 @@ class SupabaseManager {
         throw Exception("Cannot delete a checked out book");
       }
 
+      // First delete any related bookstatus records
+      await client
+          .from('bookstatus')
+          .delete()
+          .eq('copyid', copyId);
+
       // Then delete the book copy
       await client
           .from('bookcopies')
