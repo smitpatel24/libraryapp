@@ -610,7 +610,7 @@ class SupabaseManager {
       // Check if book is currently checked out
       final bookCopy = await client
           .from('bookcopies')
-          .select('available')
+          .select('available, bookid')
           .eq('copyid', copyId)
           .single();
 
@@ -618,7 +618,13 @@ class SupabaseManager {
         throw Exception("Cannot delete a checked out book");
       }
 
-      // First delete any related bookstatus records
+      // First delete any related transactions
+      await client
+          .from('transactions')
+          .delete()
+          .eq('copyid', copyId);
+
+      // Then delete any related bookstatus records
       await client
           .from('bookstatus')
           .delete()
@@ -629,6 +635,21 @@ class SupabaseManager {
           .from('bookcopies')
           .delete()
           .eq('copyid', copyId);
+
+      // Check total copies after deletion
+      final bookInfo = await client
+          .from('allbooksinfo')
+          .select('totalcopies')
+          .eq('bookid', bookCopy['bookid'])
+          .single();
+
+      // If no copies remain, delete the book
+      if (bookInfo['totalcopies'] == 0) {
+        await client
+            .from('books')
+            .delete()
+            .eq('bookid', bookCopy['bookid']);
+      }
     } catch (error) {
       print('Error deleting book copy: $error');
       throw error;
