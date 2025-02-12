@@ -101,6 +101,32 @@ class OfflineEnabledSupabaseManager {
         );
         break;
 
+      case 'addBook':
+        if (operation.params['isOffline'] == true) {
+          // For offline operations, we need to ensure author exists first
+          final authorId = await _supabaseManager.ensureAuthorExists(
+            operation.params['authorName'],
+            0
+          );
+          if (authorId != null) {
+            await _supabaseManager.addBook(
+              operation.params['title'],
+              authorId,
+              operation.params['barcode'],
+            );
+          } else {
+            throw Exception('Failed to create/find author during sync');
+          }
+        }
+        break;
+
+      case 'addBookCopy':
+        await _supabaseManager.addBookCopy(
+          operation.params['existingBarcode'],
+          operation.params['newBarcode'],
+        );
+        break;
+
       default:
         throw UnsupportedError(
             'Unsupported operation: ${operation.functionName}');
@@ -225,8 +251,7 @@ class OfflineEnabledSupabaseManager {
     }
   }
 
-  Future<void> setUserPassword(
-      {required int userId, required String userPassword}) async {
+  Future<void> setUserPassword({required int userId, required String userPassword}) async {
     final isCurrentlyConnected = await _connectivityService.checkConnectivity();
     if (isCurrentlyConnected) {
       log('Setting password for user: $userId, using Supabase');
@@ -243,6 +268,51 @@ class OfflineEnabledSupabaseManager {
     }
   }
 
+  Future<int?> ensureAuthorExists(String authorName, int bookId) async {
+    final isCurrentlyConnected = await _connectivityService.checkConnectivity();
+    if (isCurrentlyConnected) {
+      log('Ensuring author exists: $authorName, using Supabase');
+      return await _supabaseManager.ensureAuthorExists(authorName, bookId);
+    } else {
+      log('Cannot verify author existence in offline mode');
+      return -1; // Return -1 to indicate offline mode
+    }
+  }
+
+  Future<void> addBookCopy(String existingBarcode, String newBarcode) async {
+    final isCurrentlyConnected = await _connectivityService.checkConnectivity();
+    if (isCurrentlyConnected) {
+      log('Adding book copy with barcode: $newBarcode, using Supabase');
+      await _supabaseManager.addBookCopy(existingBarcode, newBarcode);
+    } else {
+      log('Adding book copy with barcode: $newBarcode, queuing operation');
+      await _queueOperation('addBookCopy', {
+        'existingBarcode': existingBarcode,
+        'newBarcode': newBarcode,
+      });
+    }
+  }
+
+  Future<void> addBook(String title, String authorName, String barcode) async {
+    final isCurrentlyConnected = await _connectivityService.checkConnectivity();
+    if (isCurrentlyConnected) {
+      log('Adding book: $title with author: $authorName, using Supabase');
+      final authorId = await _supabaseManager.ensureAuthorExists(authorName, 0);
+      if (authorId == null) {
+        throw Exception('Failed to create/find author');
+      }
+      await _supabaseManager.addBook(title, authorId, barcode);
+    } else {
+      log('Adding book: $title with author: $authorName, queuing operation');
+      await _queueOperation('addBook', {
+        'title': title,
+        'authorName': authorName,
+        'barcode': barcode,
+        'isOffline': true,
+      });
+    }
+  }
+
   String _generateUniqueId() {
     return DateTime.now()
         .millisecondsSinceEpoch
@@ -252,7 +322,7 @@ class OfflineEnabledSupabaseManager {
   // show toast message
   void _showToast([String? message]) {
     BotToast.showText(
-        text: message ?? "Curretnly offline mode, operation queued",
+        text: message ?? "Currently offline mode, operation queued",
         duration: const Duration(seconds: 2),
         contentColor: Colors.green);
   }

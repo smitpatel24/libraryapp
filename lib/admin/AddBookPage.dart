@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
-import '../services/supabase_manager.dart';
+import '../services/offline_enabled_supabase_manager.dart';
 
 class AddBookPage extends StatefulWidget {
   @override
@@ -10,6 +10,7 @@ class AddBookPage extends StatefulWidget {
 enum BookAddType { newBook, existingBook }
 
 class _AddBookPageState extends State<AddBookPage> {
+  final _offlineEnabledManager = OfflineEnabledSupabaseManager();
   final TextEditingController _bookNameController = TextEditingController();
   final TextEditingController _authorNameController = TextEditingController();
   final TextEditingController _existingBookBarcodeController = TextEditingController();
@@ -68,7 +69,7 @@ class _AddBookPageState extends State<AddBookPage> {
     try {
       if (_selectedType == BookAddType.existingBook) {
         // Add a copy of existing book
-        await SupabaseManager().addBookCopy(
+        await _offlineEnabledManager.addBookCopy(
           _existingBookBarcodeController.text,  
           _barcodeIdController.text
         );
@@ -83,21 +84,11 @@ class _AddBookPageState extends State<AddBookPage> {
 
       // Adding a new book
       String normalized_aname = normalizeAuthorName(_authorNameController.text);
-      int? authorId = await SupabaseManager().ensureAuthorExists(normalized_aname, 0); // Pass 0 since we don't need bookId check
       
-      if (authorId == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Author could not be verified or added.'))
-          );
-        }
-        return;
-      }
-
       // Add new book and its first copy
-      await SupabaseManager().addBook(
+      await _offlineEnabledManager.addBook(
           _bookNameController.text,
-          authorId,
+          normalized_aname,
           _barcodeIdController.text
       );
       if (mounted) {
